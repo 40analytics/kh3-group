@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(npx nest start --watch)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma migrate reset:*)",
+      "Bash(npm run lint)",
+      "Bash(npx eslint:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(ls:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma db push:*)",
+      "Bash(\"/Users/joel/Documents/KHY CRM Dashboard/backend/.env.example\" << 'EOF'\n# Database\nDATABASE_URL=\"postgresql://user:password@localhost:5432/khy_crm?schema=public\"\n\n# JWT Authentication\nJWT_SECRET=\"your-super-secret-jwt-key-change-this-in-production\"\nJWT_EXPIRES_IN=\"7d\"\n\n# SendGrid Email Service\nSENDGRID_API_KEY=\"your-sendgrid-api-key\"\nSENDGRID_FROM_EMAIL=\"noreply@khygroup.com\"\n\n# Frontend URL \\(for password reset links\\)\nFRONTEND_URL=\"http://localhost:3000\"\n\n# AI Provider API Keys\nANTHROPIC_API_KEY=\"your-anthropic-api-key\"\nOPENAI_API_KEY=\"your-openai-api-key\"\nGEMINI_API_KEY=\"your-gemini-api-key\"\n\n# AI Configuration\nAI_DEFAULT_PROVIDER=\"anthropic\"\nEOF)",
+      "Bash(npx ts-node:*)",
+      "Bash(find:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(xargs:*)",
+      "Bash(npx prisma format:*)",
+      "Bash(psql:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(pkill:*)",
+      "Bash(gsutil ls:*)",
+      "Bash(gsutil mb:*)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

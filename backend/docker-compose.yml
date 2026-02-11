@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: khy-crm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: khy_crm
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: khy-crm-backend
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/khy_crm?schema=public
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-khy-crm-super-secret-jwt-key-2026-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      # Email
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-noreply@khygroup.com}
+
+      # Frontend
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+
+      # AI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AI_DEFAULT_PROVIDER: ${AI_DEFAULT_PROVIDER:-OPENAI}
+
+      # GCP Storage
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_STORAGE_BUCKET: ${GCP_STORAGE_BUCKET}
+      GCP_SERVICE_ACCOUNT_KEY_PATH: ${GCP_SERVICE_ACCOUNT_KEY_PATH:-./gcp-service-account-key.json}
+
+      # Server
+      PORT: 4000
+      NODE_ENV: development
+    volumes:
+      # Mount service account key if using local file
+      - ./gcp-service-account-key.json:/app/gcp-service-account-key.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:4000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local

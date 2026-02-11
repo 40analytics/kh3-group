@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id                String    @id @default(uuid())
+  contactName       String
+  company           String
+  position          String?
+  email             String?
+  phone             String?
+  value             Float
+  stage             String // 'New', 'Contacted', 'Quoted', 'Negotiation', 'Won', 'Lost'
+  serviceType       String? // e.g., 'Consulting', 'Development', 'Support'
+  urgency           String // 'Low', 'Medium', 'High'
+  source            String
+  channel           String
+  expectedCloseDate DateTime?
+  notes             String?
+  aiRiskLevel       String? // 'Low', 'Medium', 'High'
+  aiSummary         String?
+  aiRecommendations String?
+
+  // Time tracking for dashboard metrics
+  quoteSentAt       DateTime? // When quote was sent (moved to 'Quoted' stage)
+  dealClosedAt      DateTime? // When deal was won or lost
+
+  // Assignment
+  assignedToId String?
+  assignedTo   User?   @relation("LeadAssignments", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  // Client relationship (for repeat business - link lead to existing client)
+  clientId String?
+  client   Client? @relation("ClientLeads", fields: [clientId], references: [id], onDelete: SetNull)
+
+  // Conversion tracking (set when lead is converted)
+  convertedToClientId String?  @unique
+  convertedToClient   Client?  @relation("LeadConversion", fields: [convertedToClientId], references: [id], onDelete: SetNull)
+
+  // Project relationship
+  project             Project?
+
+  // Activities
+  activities Activity[]
+
+  // Files
+  files File[]
+
+  // Stage history
+  stageHistory StageHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leads")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+
+  // Polymorphic - exactly one must be set
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  clientId  String?
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  type      String   // 'call', 'note', 'status_change', 'email', 'meeting'
+  content   String   @db.Text
+  userId    String
+  user      User     @relation("UserActivities", fields: [userId], references: [id])
+  metadata  Json?    // Additional data like old/new status, call duration, etc.
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model File {
+  id           String   @id @default(uuid())
+
+  // Polymorphic - exactly one must be set
+  leadId       String?
+  lead         Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  category     String   // 'brief', 'drawing', 'quotation', 'contract', 'meeting_notes', 'other'
+  gcpPath      String   // GCP Storage path
+  uploadedById String
+  uploadedBy   User     @relation("FileUploads", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([leadId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("files")
+}
+
+model StageHistory {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromStage String?  // null for initial creation
+  toStage   String   // New, Contacted, Quoted, Negotiation, Won, Lost
+  changedBy String
+  user      User     @relation("StageChanges", fields: [changedBy], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([toStage])
+  @@index([createdAt])
+  @@map("stage_history")
+}
+
+model Client {
+  id               String  @id @default(uuid())
+  name             String
+
+  // Contact Information
+  email            String?
+  phone            String?
+  address          String?  @db.Text
+  website          String?
+
+  // Classification
+  segment          String // 'Enterprise', 'Mid-Market', 'SMB'
+  industry         String
+
+  // Financial
+  lifetimeRevenue  Float     @default(0)
+
+  // Health Status
+  status                String    @default("Active") // 'Active', 'Dormant', 'At Risk'
+  healthScore           Int?      // 0-100
+  aiHealthSummary       String?   @db.Text
+  aiUpsellStrategy      String?   @db.Text
+
+  // Status Management
+  statusOverride        Boolean   @default(false)
+  statusOverrideReason  String?
+  statusLastCalculated  DateTime?
+
+  // Engagement Metrics (for AI calculations)
+  lastContactDate       DateTime?
+  totalProjectCount     Int       @default(0)
+  activeProjectCount    Int       @default(0)
+
+  // Assignment
+  accountManagerId String?
+  accountManager   User?   @relation("ClientAssignments", fields: [accountManagerId], references: [id], onDelete: SetNull)
+
+  // Relationships
+  projects          Project[]
+  leads             Lead[]    @relation("ClientLeads")
+  activities        Activity[]
+  files             File[]
+  convertedFromLead Lead?     @relation("LeadConversion")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([segment])
+  @@index([status])
+  @@index([accountManagerId])
+  @@map("clients")
+}
+
+model Project {
+  id                String    @id @default(uuid())
+  name              String
+  clientId          String
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  leadId            String?   @unique
+  lead              Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  status            String    // 'Planning', 'Active', 'On Hold', 'Completed', 'Cancelled'
+  value             Float
+  startDate         DateTime?
+  completedDate     DateTime?
+  description       String?   @db.Text
+
+  projectManagerId  String?
+  projectManager    User?     @relation("ProjectManagement", fields: [projectManagerId], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([leadId])
+  @@index([status])
+  @@map("projects")
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  password               String? // Optional to allow migration of existing users
+  name                   String
+  role                   String // 'CEO', 'ADMIN', 'SALES', 'MANAGER'
+  status                 String    @default("Active") // 'Active', 'Inactive'
+  isEmailVerified        Boolean   @default(false)
+  emailVerificationToken String?   @unique
+  resetPasswordToken     String?   @unique
+  resetPasswordExpires   DateTime?
+  lastLogin              DateTime?
+
+  // Team and hierarchy
+  teamName    String? // Team identifier for grouping users
+  managerId   String? // Reports to this manager
+  manager     User?   @relation("ManagerTeam", fields: [managerId], references: [id], onDelete: SetNull)
+  teamMembers User[]  @relation("ManagerTeam")
+
+  // Assignments
+  assignedLeads   Lead[]   @relation("LeadAssignments")
+  assignedClients Client[] @relation("ClientAssignments")
+  managedProjects Project[] @relation("ProjectManagement")
+
+  // Audit logs
+  auditLogs      AuditLog[] @relation("AuditActor")
+  targetedAudits AuditLog[] @relation("AuditTarget")
+
+  // Activities
+  activities Activity[] @relation("UserActivities")
+
+  // File uploads
+  uploadedFiles File[] @relation("FileUploads")
+
+  // Stage changes
+  stageChanges StageHistory[] @relation("StageChanges")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model AISettings {
+  id                       String   @id @default(uuid())
+  defaultProvider          String   @default("anthropic") // 'anthropic', 'openai', 'gemini'
+  leadRiskProvider         String?
+  clientHealthProvider     String?
+  executiveSummaryProvider String?
+  chatProvider             String?
+  anthropicKeyValid        Boolean  @default(false)
+  openaiKeyValid           Boolean  @default(false)
+  geminiKeyValid           Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("ai_settings")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("AuditActor", fields: [userId], references: [id], onDelete: Cascade)
+  action       String // CREATE_USER, UPDATE_USER, DELETE_USER, PASSWORD_CHANGE, etc.
+  targetUserId String?
+  targetUser   User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  details      Json? // Additional context (role changed, field modified, etc.)
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
