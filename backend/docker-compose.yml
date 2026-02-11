@@ -1,21 +1,33 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
+  # MySQL Database (matching GCP Cloud SQL)
+  mysql:
+    image: mysql:8.0
     container_name: khy-crm-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: khy_crm
+      MYSQL_ROOT_PASSWORD: mysql_root_password
+      MYSQL_DATABASE: kh3-db
+      MYSQL_USER: khy_user
+      MYSQL_PASSWORD: khy_password
     ports:
-      - '5432:5432'
+      - '3306:3306'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-pmysql_root_password',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +43,7 @@ services:
       - '4000:4000'
     environment:
       # Database
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/khy_crm?schema=public
+      DATABASE_URL: mysql://khy_user:khy_password@mysql:3306/kh3-db
 
       # JWT
       JWT_SECRET: ${JWT_SECRET:-khy-crm-super-secret-jwt-key-2026-change-in-production}
@@ -61,7 +73,7 @@ services:
       # Mount service account key if using local file
       - ./gcp-service-account-key.json:/app/gcp-service-account-key.json:ro
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
     healthcheck:
       test:
@@ -77,5 +89,5 @@ services:
       start_period: 40s
 
 volumes:
-  postgres_data:
+  mysql_data:
     driver: local
