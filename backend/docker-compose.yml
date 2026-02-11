@@ -67,7 +67,7 @@ services:
       GCP_SERVICE_ACCOUNT_KEY_PATH: ${GCP_SERVICE_ACCOUNT_KEY_PATH:-./gcp-service-account-key.json}
 
       # Server
-      PORT: 4000
+      PORT: 4000  # Local dev uses 4000, Cloud Run will use 8080
       NODE_ENV: development
     volumes:
       # Mount service account key if using local file
