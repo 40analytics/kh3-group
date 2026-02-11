@@ -1,9 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "🔧 Generating Prisma Client..."
-npx prisma generate
-
+# Prisma Client already generated during build
 # Skip migrations on startup - run them separately via Cloud Run Job
 # echo "🗄️  Running database migrations..."
 # npx prisma migrate deploy
