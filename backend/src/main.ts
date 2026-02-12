@@ -3,31 +3,74 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  try {
+    console.log('🔄 Starting KHY CRM Backend...');
+    console.log(`📦 Node environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔌 Database URL configured: ${process.env.DATABASE_URL ? 'Yes' : 'No'}`);
 
-  // Enable CORS for Next.js frontend
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  });
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug'],
+    });
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+    // Enable CORS for Next.js frontend
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://kh3-group.vercel.app',
+      ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.replace(/\/$/, '')] : []),
+    ];
 
-  // API prefix
-  app.setGlobalPrefix('api');
+    console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 
-  const port = process.env.PORT || 4000;
-  await app.listen(port, '0.0.0.0');
+    app.enableCors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
 
-  console.log(`🚀 KHY CRM Backend running on http://0.0.0.0:${port}`);
-  console.log(`📚 API available at http://localhost:${port}/api`);
+        // Remove trailing slash from origin for comparison
+        const normalizedOrigin = origin.replace(/\/$/, '');
+
+        if (allowedOrigins.some(allowed => allowed === normalizedOrigin)) {
+          callback(null, true);
+        } else {
+          console.warn(`⚠️  CORS blocked origin: ${origin}`);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    });
+
+    // Global validation pipe
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+
+    // API prefix
+    app.setGlobalPrefix('api');
+
+    // Graceful shutdown
+    app.enableShutdownHooks();
+
+    const port = process.env.PORT || 4000;
+    const host = '0.0.0.0';
+
+    console.log(`🎯 Attempting to bind to ${host}:${port}...`);
+    await app.listen(port, host);
+
+    console.log(`✅ KHY CRM Backend successfully started!`);
+    console.log(`🚀 Server running on http://${host}:${port}`);
+    console.log(`📚 API available at http://${host}:${port}/api`);
+    console.log(`❤️  Health check available at http://${host}:${port}/api/health`);
+  } catch (error) {
+    console.error('❌ Failed to start application:');
+    console.error(error);
+    process.exit(1);
+  }
 }
 
 bootstrap();
