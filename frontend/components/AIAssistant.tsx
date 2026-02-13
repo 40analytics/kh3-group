@@ -19,7 +19,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     {
       id: '1',
       sender: 'ai',
-      text: 'Hello! I am your KHY CRM Assistant. Ask me anything about your leads or clients.',
+      text: 'Hello! I am your KH3 Group CRM Assistant. Ask me anything about your leads or clients.',
       timestamp: new Date(),
     },
   ]);

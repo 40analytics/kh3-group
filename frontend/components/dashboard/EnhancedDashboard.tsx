@@ -17,25 +17,16 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
 } from 'recharts';
 import {
-  DollarSign,
-  Users,
-  TrendingUp,
-  Target,
-  ArrowUpRight,
-  ArrowDownRight,
-  Sparkles,
+  BrainCircuit,
+  Wand2,
+  Lightbulb,
   Loader2,
   AlertTriangle,
   Clock,
-  FolderKanban,
   AlertCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { dashboardApi, type DashboardMetrics, type ExecutiveSummaryResponse } from '@/lib/api/dashboard';
 import { toast } from 'sonner';
@@ -87,76 +78,62 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
   if (loadingMetrics || !metrics) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Metrics cards data
   const metricsCards = [
     {
       label: 'Total Revenue',
       value: `$${(metrics.totalRevenue / 1000).toFixed(0)}k`,
       change: period === 'month' ? `$${(metrics.monthlyRevenue / 1000).toFixed(0)}k this month` : `$${(metrics.quarterlyRevenue / 1000).toFixed(0)}k this quarter`,
-      icon: DollarSign,
-      color: 'blue',
     },
     {
       label: 'Win Rate',
       value: `${metrics.winRate}%`,
       change: `${metrics.wonLeads}/${metrics.wonLeads + metrics.lostLeads} deals closed`,
-      icon: TrendingUp,
-      color: 'green',
     },
     {
       label: 'Pipeline Value',
       value: `$${(metrics.pipelineValue / 1000).toFixed(0)}k`,
       change: `${metrics.highValueDeals.length} high-value deals`,
-      icon: Target,
-      color: 'purple',
     },
     {
       label: 'Active Projects',
       value: metrics.activeProjects.toString(),
       change: `${metrics.projectsAtRisk.length} at risk`,
-      icon: FolderKanban,
-      color: 'amber',
     },
   ];
 
-  // Time metrics cards
   const timeMetrics = [
     {
       label: 'Avg Time to Quote',
       value: `${metrics.avgTimeToQuote} days`,
-      icon: Clock,
     },
     {
       label: 'Avg Time to Close',
       value: `${metrics.avgTimeToClose} days`,
-      icon: Clock,
     },
   ];
 
-  // Pipeline funnel data
   const funnelData = metrics.funnelDropOff.filter((stage) => stage.stage !== 'Lost');
 
-  // Project status colors
   const statusColors: Record<string, string> = {
-    Planning: '#3b82f6',
-    Active: '#10b981',
-    'On Hold': '#f59e0b',
-    Completed: '#6b7280',
-    Cancelled: '#ef4444',
+    Planning: 'oklch(0.22 0.02 50)',
+    Active: 'oklch(0.55 0.08 155)',
+    'On Hold': 'oklch(0.70 0.12 85)',
+    Completed: 'oklch(0.55 0.03 250)',
+    Cancelled: 'oklch(0.58 0.10 35)',
   };
 
   return (
     <div className="min-h-screen space-y-6">
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">CEO Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-display">CEO Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Real-time business performance metrics
           </p>
         </div>
@@ -182,55 +159,39 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
         </div>
       </div>
 
-      {/* Main Metrics Grid */}
+      {/* Main Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metricsCards.map((metric, idx) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={idx} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 bg-${metric.color}-50 rounded-lg`}>
-                    <Icon className={`h-5 w-5 text-${metric.color}-600`} />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <CardTitle className="text-sm font-medium text-gray-600 mb-1">
-                  {metric.label}
-                </CardTitle>
-                <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{metric.change}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {metricsCards.map((metric, idx) => (
+          <Card key={idx}>
+            <CardContent className="p-6">
+              <p className="text-sm font-medium text-muted-foreground mb-1">
+                {metric.label}
+              </p>
+              <p className="text-2xl font-display">{metric.value}</p>
+              <p className="text-xs text-muted-foreground mt-2">{metric.change}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Time Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {timeMetrics.map((metric, idx) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={idx} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 bg-white rounded-lg shadow-sm">
-                  <Icon className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{metric.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {timeMetrics.map((metric, idx) => (
+          <Card key={idx}>
+            <CardContent className="p-4 flex items-center gap-4">
+              <Clock className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{metric.label}</p>
+                <p className="text-2xl font-display">{metric.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Revenue by Client */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
+      {/* Charts */}
+      <div className="grid gap-4">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Revenue by Client</CardTitle>
             <CardDescription>Top 10 revenue contributors</CardDescription>
@@ -238,10 +199,10 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={metrics.revenueByClient.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.008 80)" vertical={false} />
                 <XAxis
                   dataKey="clientName"
-                  stroke="#9ca3af"
+                  stroke="oklch(0.50 0.01 50)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -250,7 +211,7 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                   height={80}
                 />
                 <YAxis
-                  stroke="#9ca3af"
+                  stroke="oklch(0.50 0.01 50)"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -258,20 +219,19 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
+                    backgroundColor: 'oklch(0.995 0.003 80)',
+                    border: '1px solid oklch(0.90 0.008 80)',
                     borderRadius: '8px',
                   }}
                   formatter={(value?: number) => [`$${(value || 0).toLocaleString()}`, 'Revenue']}
                 />
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" fill="oklch(0.22 0.02 50)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Sales Funnel */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Sales Funnel</CardTitle>
             <CardDescription>Lead progression & drop-off rates</CardDescription>
@@ -279,23 +239,23 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={funnelData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-                <XAxis type="number" stroke="#9ca3af" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.008 80)" horizontal={false} />
+                <XAxis type="number" stroke="oklch(0.50 0.01 50)" fontSize={12} />
                 <YAxis
                   type="category"
                   dataKey="stage"
-                  stroke="#9ca3af"
+                  stroke="oklch(0.50 0.01 50)"
                   fontSize={12}
                   width={100}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
+                    backgroundColor: 'oklch(0.995 0.003 80)',
+                    border: '1px solid oklch(0.90 0.008 80)',
                     borderRadius: '8px',
                   }}
                 />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="count" fill="oklch(0.55 0.08 155)" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -304,8 +264,7 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
 
       {/* Projects Section */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Project Status Distribution */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Project Status</CardTitle>
             <CardDescription>Distribution by status</CardDescription>
@@ -317,11 +276,11 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                   <div className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: statusColors[status.status] || '#6b7280' }}
+                      style={{ backgroundColor: statusColors[status.status] || 'oklch(0.55 0.03 250)' }}
                     />
                     <span className="text-sm font-medium">{status.status}</span>
                   </div>
-                  <span className="text-sm font-bold">{status.count}</span>
+                  <span className="text-sm font-display">{status.count}</span>
                 </div>
               ))}
             </div>
@@ -329,27 +288,27 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
         </Card>
 
         {/* Projects at Risk */}
-        <Card className="bg-amber-50 border border-amber-200">
+        <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-lg font-semibold text-amber-900">
+              <CardTitle className="text-lg font-semibold">
                 Projects at Risk
               </CardTitle>
             </div>
-            <CardDescription className="text-amber-700">
+            <CardDescription>
               Requires attention
             </CardDescription>
           </CardHeader>
           <CardContent>
             {metrics.projectsAtRisk.length === 0 ? (
-              <p className="text-sm text-amber-700">No projects at risk</p>
+              <p className="text-sm text-muted-foreground">No projects at risk</p>
             ) : (
               <div className="space-y-2">
                 {metrics.projectsAtRisk.slice(0, 5).map((project, idx) => (
-                  <div key={idx} className="p-3 bg-white rounded-lg border border-amber-200">
-                    <p className="text-sm font-medium text-gray-900">{project.projectName}</p>
-                    <p className="text-xs text-gray-600 mt-1">{project.reason}</p>
+                  <div key={idx} className="p-3 bg-muted rounded-lg border-l-2 border-l-amber-500">
+                    <p className="text-sm font-medium">{project.projectName}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{project.reason}</p>
                   </div>
                 ))}
               </div>
@@ -360,33 +319,32 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
 
       {/* Stalled Leads & Revenue Concentration */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Stalled Leads */}
-        <Card className="bg-red-50 border border-red-200">
+        <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <CardTitle className="text-lg font-semibold text-red-900">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <CardTitle className="text-lg font-semibold">
                 Stalled Leads
               </CardTitle>
             </div>
-            <CardDescription className="text-red-700">
+            <CardDescription>
               No activity in 30+ days
             </CardDescription>
           </CardHeader>
           <CardContent>
             {metrics.stalledLeads.length === 0 ? (
-              <p className="text-sm text-red-700">No stalled leads</p>
+              <p className="text-sm text-muted-foreground">No stalled leads</p>
             ) : (
               <div className="space-y-2">
                 {metrics.stalledLeads.slice(0, 5).map((lead, idx) => (
-                  <div key={idx} className="p-3 bg-white rounded-lg border border-red-200">
+                  <div key={idx} className="p-3 bg-muted rounded-lg border-l-2 border-l-red-400">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900">{lead.company}</p>
-                      <span className="text-xs font-semibold text-red-600">
+                      <p className="text-sm font-medium">{lead.company}</p>
+                      <span className="text-xs font-semibold text-red-500">
                         {lead.daysStalled}d
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">{lead.stage}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{lead.stage}</p>
                   </div>
                 ))}
               </div>
@@ -395,7 +353,7 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
         </Card>
 
         {/* Revenue Concentration */}
-        <Card className={metrics.revenueConcentration.isHighRisk ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}>
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Revenue Concentration</CardTitle>
             <CardDescription>Client diversification risk</CardDescription>
@@ -405,13 +363,13 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Top Client</span>
-                  <span className="text-sm font-bold">
+                  <span className="text-sm font-display">
                     {metrics.revenueConcentration.topClientPercentage}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full"
+                    className="bg-primary h-2 rounded-full"
                     style={{ width: `${metrics.revenueConcentration.topClientPercentage}%` }}
                   />
                 </div>
@@ -419,21 +377,21 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Top 5 Clients</span>
-                  <span className="text-sm font-bold">
+                  <span className="text-sm font-display">
                     {metrics.revenueConcentration.top5ClientsPercentage}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full ${metrics.revenueConcentration.isHighRisk ? 'bg-red-600' : 'bg-green-600'}`}
+                    className={`h-2 rounded-full ${metrics.revenueConcentration.isHighRisk ? 'bg-red-500' : 'bg-emerald-600'}`}
                     style={{ width: `${metrics.revenueConcentration.top5ClientsPercentage}%` }}
                   />
                 </div>
               </div>
               {metrics.revenueConcentration.isHighRisk && (
-                <div className="p-3 bg-red-100 border border-red-300 rounded-lg">
-                  <p className="text-xs font-semibold text-red-900">
-                    ⚠️ HIGH RISK: Over 50% revenue from top 5 clients
+                <div className="p-3 bg-muted rounded-lg border-l-2 border-l-red-400">
+                  <p className="text-xs font-semibold">
+                    HIGH RISK: Over 50% revenue from top 5 clients
                   </p>
                 </div>
               )}
@@ -443,69 +401,53 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
       </div>
 
       {/* AI Executive Brief */}
-      <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 shadow-lg">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-indigo-200/20 to-blue-200/20 rounded-full blur-2xl"></div>
-
-        <CardHeader className="relative pb-3">
+      <Card>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl blur-lg opacity-40"></div>
-                <div className="relative p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-xl">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              <BrainCircuit className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <CardTitle className="text-xl font-display">
                   AI Executive Brief
-                  <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
-                    LIVE
-                  </span>
                 </CardTitle>
-                <CardDescription className="text-sm text-gray-600 font-medium mt-1">
+                <CardDescription className="text-sm mt-1">
                   Real-time insights powered by advanced analytics
                 </CardDescription>
               </div>
             </div>
             <Button
               onClick={handleGenerateInsight}
-              disabled={loadingAI}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all">
-              <span className="flex items-center gap-2">
-                {loadingAI ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Generate Insights
-                  </>
-                )}
-              </span>
+              disabled={loadingAI}>
+              {loadingAI ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Generate Insights
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>
 
-        <CardContent className="relative pt-4">
+        <CardContent className="pt-4">
           {aiSummary ? (
             <div className="space-y-4">
-              {/* Overview */}
-              <div className="p-5 bg-white/80 backdrop-blur-sm border-2 border-blue-100 rounded-xl shadow-md">
-                <h4 className="text-sm font-bold text-blue-900 mb-2">Executive Overview</h4>
-                <p className="text-base text-gray-800 leading-relaxed">{aiSummary.summary.overview}</p>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="text-sm font-semibold mb-2">Executive Overview</h4>
+                <p className="text-sm leading-relaxed">{aiSummary.summary.overview}</p>
               </div>
 
-              {/* What Changed */}
               {aiSummary.summary.whatChanged.length > 0 && (
-                <div className="p-4 bg-white/80 backdrop-blur-sm border-2 border-green-100 rounded-xl">
-                  <h4 className="text-sm font-bold text-green-900 mb-3">What Changed</h4>
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3">What Changed</h4>
                   <ul className="space-y-2">
                     {aiSummary.summary.whatChanged.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-800">
-                        <TrendingUp className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <TrendingUp className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -513,17 +455,16 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                 </div>
               )}
 
-              {/* What Is At Risk */}
               {aiSummary.summary.whatIsAtRisk.length > 0 && (
-                <div className="p-4 bg-white/80 backdrop-blur-sm border-2 border-amber-100 rounded-xl">
-                  <h4 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
                     What Is At Risk
                   </h4>
                   <ul className="space-y-2">
                     {aiSummary.summary.whatIsAtRisk.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-800">
-                        <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -531,19 +472,18 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                 </div>
               )}
 
-              {/* What Needs Attention */}
               {aiSummary.summary.whatNeedsAttention.length > 0 && (
-                <div className="p-4 bg-white/80 backdrop-blur-sm border-2 border-red-100 rounded-xl">
-                  <h4 className="text-sm font-bold text-red-900 mb-3 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
                     What Needs Attention
                   </h4>
                   <ul className="space-y-2">
                     {aiSummary.summary.whatNeedsAttention.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-800">
-                        <div className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
-                          {idx + 1}
-                        </div>
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="text-xs font-semibold text-muted-foreground mt-0.5 flex-shrink-0 w-4">
+                          {idx + 1}.
+                        </span>
                         {item}
                       </li>
                     ))}
@@ -551,14 +491,13 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
                 </div>
               )}
 
-              {/* Key Insights */}
               {aiSummary.summary.keyInsights.length > 0 && (
-                <div className="p-4 bg-white/80 backdrop-blur-sm border-2 border-purple-100 rounded-xl">
-                  <h4 className="text-sm font-bold text-purple-900 mb-3">Key Insights</h4>
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3">Key Insights</h4>
                   <ul className="space-y-2">
                     {aiSummary.summary.keyInsights.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-800">
-                        <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <Lightbulb className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -567,11 +506,9 @@ export default function EnhancedDashboard({ initialPeriod = 'month' }: EnhancedD
               )}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-2 border-blue-200 mb-6">
-                <Sparkles className="h-10 w-10 text-blue-600" />
-              </div>
-              <p className="text-base text-gray-700 font-semibold max-w-md mx-auto">
+            <div className="text-center py-12">
+              <BrainCircuit className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                 Click &quot;Generate Insights&quot; to receive AI-powered business intelligence
               </p>
             </div>

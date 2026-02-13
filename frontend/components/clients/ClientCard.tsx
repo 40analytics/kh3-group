@@ -22,12 +22,12 @@ interface ClientCardProps {
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active':
-      return 'bg-green-100 text-green-700 border-green-200';
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     case 'at risk':
     case 'dormant':
-      return 'bg-red-100 text-red-700 border-red-200';
+      return 'bg-red-50 text-red-600 border-red-200';
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200';
+      return 'bg-muted text-muted-foreground border-border';
   }
 };
 
@@ -46,7 +46,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
-              <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-semibold text-lg">
+              <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-lg">
                 {client.name.charAt(0)}
               </AvatarFallback>
             </Avatar>

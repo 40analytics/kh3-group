@@ -31,7 +31,7 @@ export const generateExecutiveSummary = async (
 
   try {
     const prompt = `
-      Act as a Chief Strategy Officer. Analyze the following CRM data for KHY Group.
+      Act as a Chief Strategy Officer. Analyze the following CRM data for KH3 Group.
 
       Metrics:
       - Total Revenue: $${metrics.totalRevenue}
@@ -325,7 +325,7 @@ export const askCRM = async (
       .join('\n');
 
     const prompt = `
-           You are the KHY Group AI CRM Assistant. You have access to the following live data:
+           You are the KH3 Group AI CRM Assistant. You have access to the following live data:
            
            LEADS:
            ${leadsSummary}

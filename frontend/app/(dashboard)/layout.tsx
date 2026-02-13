@@ -1,6 +1,7 @@
 'use client';
 
-import { ModernSidebar } from '@/components/layout/ModernSidebar';
+import { AppSidebar, SidebarProvider, SidebarTrigger } from '@/components/layout/AppSidebar';
+import { Separator } from '@/components/ui/separator';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 
 export default function DashboardLayout({
@@ -10,26 +11,34 @@ export default function DashboardLayout({
 }) {
   const { isLoading } = useRequireAuth();
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <ModernSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto p-4 md:p-8 mt-[57px] lg:mt-0">
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-background">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col min-w-0">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 !h-4" />
+            <span className="text-sm text-muted-foreground font-display font-semibold tracking-tight">
+              KH<span className="text-[#FF0011]">3</span> Group
+            </span>
+          </header>
+          <main className="flex-1 overflow-auto p-4 md:p-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

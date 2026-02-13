@@ -406,7 +406,7 @@ export default function ModernLeadsView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-3xl font-display tracking-tight">
             Sales Pipeline
           </h2>
           <p className="text-muted-foreground mt-1">
@@ -433,9 +433,7 @@ export default function ModernLeadsView({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-              </div>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">
                   Total Pipeline
@@ -454,9 +452,7 @@ export default function ModernLeadsView({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-4 w-4 text-green-600" />
-              </div>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">
                   Won Deals
@@ -471,9 +467,7 @@ export default function ModernLeadsView({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-              </div>
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">
                   In Progress
@@ -492,9 +486,7 @@ export default function ModernLeadsView({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Building2 className="h-4 w-4 text-purple-600" />
-              </div>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">
                   Total Leads
@@ -539,7 +531,7 @@ export default function ModernLeadsView({
                               <div
                                 className={`w-3 h-3 rounded-full ${stage.color}`}
                               />
-                              <h3 className="font-semibold">
+                              <h3 className="font-display text-base">
                                 {stage.name}
                               </h3>
                               <Badge
@@ -642,7 +634,7 @@ export default function ModernLeadsView({
         <Dialog
           open={!!selectedLead}
           onOpenChange={() => setSelectedLead(null)}>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">
                 {selectedLead.contactName || selectedLead.name}
@@ -689,28 +681,49 @@ export default function ModernLeadsView({
                 </div>
               </div>
 
-              {/* Convert to Client Button (only for Won leads) */}
+              {/* Convert to Client Button (only for Won leads not yet converted) */}
               {selectedLead.stage === 'Won' && (
                 <>
                   <Separator />
-                  <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div>
-                      <p className="font-semibold text-green-900">
-                        Lead is Won! Ready to convert
-                      </p>
-                      <p className="text-sm text-green-700">
-                        Create a client and first project from this lead
-                      </p>
+                  {selectedLead.clientId ? (
+                    <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div>
+                        <p className="font-semibold text-blue-900">
+                          Converted to Client
+                        </p>
+                        <p className="text-sm text-blue-700">
+                          This lead has already been converted
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          window.location.href = '/clients';
+                        }}
+                        className="border-blue-300 text-blue-700 hover:bg-blue-100">
+                        View Clients
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => {
-                        setLeadToConvert(selectedLead);
-                        setConvertDialogOpen(true);
-                      }}
-                      className="bg-green-600 hover:bg-green-700">
-                      Convert to Client
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div>
+                        <p className="font-semibold text-green-900">
+                          Lead is Won! Ready to convert
+                        </p>
+                        <p className="text-sm text-green-700">
+                          Create a client and first project from this lead
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setLeadToConvert(selectedLead);
+                          setConvertDialogOpen(true);
+                        }}
+                        className="bg-green-600 hover:bg-green-700">
+                        Convert to Client
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -741,7 +754,7 @@ export default function ModernLeadsView({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-600" />
+                    <Sparkles className="h-4 w-4 text-primary" />
                     AI Risk Analysis
                   </h4>
                   {!selectedLead.aiRiskLevel && (
@@ -761,25 +774,23 @@ export default function ModernLeadsView({
                   )}
                 </div>
                 {selectedLead.aiSummary ? (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-gray-700">
+                  <div className="p-4 bg-muted rounded-lg border border-border">
+                    <p className="text-sm">
                       {selectedLead.aiSummary}
                     </p>
                     {selectedLead.aiRecommendations && (
-                      <div className="mt-3 pt-3 border-t border-blue-200">
-                        <p className="text-xs font-semibold text-blue-900 mb-2">
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs font-semibold mb-2">
                           Recommendations:
                         </p>
                         <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
                           {(() => {
                             try {
-                              // Try to parse as JSON array
                               const recs = JSON.parse(selectedLead.aiRecommendations);
                               return Array.isArray(recs)
                                 ? recs.map((rec, i) => <li key={i}>{rec}</li>)
                                 : <li>{selectedLead.aiRecommendations}</li>;
                             } catch {
-                              // If not JSON, treat as semicolon-separated string
                               return selectedLead.aiRecommendations
                                 .split('; ')
                                 .map((rec, i) => <li key={i}>{rec}</li>);

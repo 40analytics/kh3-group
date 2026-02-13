@@ -132,7 +132,7 @@ function LoginForm() {
             <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-500"
+                className="text-sm text-primary hover:text-primary/80"
               >
                 Forgot password?
               </Link>
@@ -147,7 +147,7 @@ function LoginForm() {
       <CardFooter className="flex flex-col space-y-2">
         <div className="text-sm text-muted-foreground text-center">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+          <Link href="/register" className="text-primary hover:text-primary/80 font-medium">
             Sign up
           </Link>
         </div>

@@ -74,7 +74,7 @@ export default function ChangePasswordPage() {
               )}
 
               {successMessage && (
-                <Alert className="bg-green-50 text-green-900 border-green-200">
+                <Alert className="bg-emerald-50 text-emerald-900 border-emerald-200">
                   <AlertDescription>{successMessage}</AlertDescription>
                 </Alert>
               )}

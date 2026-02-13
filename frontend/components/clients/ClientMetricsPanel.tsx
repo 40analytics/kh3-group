@@ -1,7 +1,12 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -27,7 +32,11 @@ interface ClientMetrics {
 }
 
 interface ClientHealthFlag {
-  type: 'NO_CONTACT' | 'DECLINING_ENGAGEMENT' | 'HIGH_VALUE_AT_RISK' | 'STRONG_RELATIONSHIP';
+  type:
+    | 'NO_CONTACT'
+    | 'DECLINING_ENGAGEMENT'
+    | 'HIGH_VALUE_AT_RISK'
+    | 'STRONG_RELATIONSHIP';
   severity: 'low' | 'medium' | 'high' | 'positive';
   message: string;
   icon: string;
@@ -52,12 +61,6 @@ export function ClientMetricsPanel({
     if (score >= 70) return 'text-green-600';
     if (score >= 40) return 'text-yellow-600';
     return 'text-red-600';
-  };
-
-  const getEngagementBgColor = (score: number) => {
-    if (score >= 70) return 'bg-green-600';
-    if (score >= 40) return 'bg-yellow-600';
-    return 'bg-red-600';
   };
 
   const getSeverityColor = (severity: string) => {
@@ -87,7 +90,8 @@ export function ClientMetricsPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className={`text-4xl font-bold ${getEngagementColor(metrics.engagementScore)}`}>
+            <div
+              className={`text-4xl font-bold ${getEngagementColor(metrics.engagementScore)}`}>
               {metrics.engagementScore}/100
             </div>
             <Badge
@@ -95,25 +99,25 @@ export function ClientMetricsPanel({
                 metrics.engagementScore >= 70
                   ? 'default'
                   : metrics.engagementScore >= 40
-                  ? 'secondary'
-                  : 'destructive'
+                    ? 'secondary'
+                    : 'destructive'
               }
               className={
                 metrics.engagementScore >= 70
                   ? 'bg-green-600 text-white hover:bg-green-700'
                   : ''
-              }
-            >
+              }>
               {metrics.engagementScore >= 70
                 ? 'Strong'
                 : metrics.engagementScore >= 40
-                ? 'Moderate'
-                : 'At Risk'}
+                  ? 'Moderate'
+                  : 'At Risk'}
             </Badge>
           </div>
           <Progress value={metrics.engagementScore} className="h-2" />
           <p className="text-sm text-muted-foreground">
-            Based on recent contact, activity level, and active projects
+            Based on recent contact, activity level, and active
+            projects
           </p>
         </CardContent>
       </Card>
@@ -133,7 +137,9 @@ export function ClientMetricsPanel({
                 <Clock className="w-4 h-4" />
                 Last Contact
               </div>
-              <div className="text-2xl font-bold">{metrics.daysSinceLastContact}d</div>
+              <div className="text-2xl font-bold">
+                {metrics.daysSinceLastContact}d
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -141,7 +147,9 @@ export function ClientMetricsPanel({
                 <Activity className="w-4 h-4" />
                 Activities (30d)
               </div>
-              <div className="text-2xl font-bold">{metrics.recentActivityCount}</div>
+              <div className="text-2xl font-bold">
+                {metrics.recentActivityCount}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {metrics.totalActivityCount} total
               </div>
@@ -152,7 +160,9 @@ export function ClientMetricsPanel({
                 <Briefcase className="w-4 h-4" />
                 Active Projects
               </div>
-              <div className="text-2xl font-bold">{metrics.activeProjectCount}</div>
+              <div className="text-2xl font-bold">
+                {metrics.activeProjectCount}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {metrics.totalProjectCount} total
               </div>
@@ -166,7 +176,9 @@ export function ClientMetricsPanel({
               <div className="text-2xl font-bold">
                 ${(metrics.recentRevenue / 1000).toFixed(0)}k
               </div>
-              <div className="text-xs text-muted-foreground">Last 12 months</div>
+              <div className="text-xs text-muted-foreground">
+                Last 12 months
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -174,7 +186,9 @@ export function ClientMetricsPanel({
                 <TrendingUp className="w-4 h-4" />
                 Completed Projects
               </div>
-              <div className="text-2xl font-bold">{metrics.completedProjectCount}</div>
+              <div className="text-2xl font-bold">
+                {metrics.completedProjectCount}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -194,7 +208,9 @@ export function ClientMetricsPanel({
       {healthFlags.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-semibold text-sm flex items-center gap-2">
-            {healthFlags.some((f) => f.severity === 'positive') ? '📊' : '⚠️'}
+            {healthFlags.some((f) => f.severity === 'positive')
+              ? '📊'
+              : '⚠️'}
             {healthFlags.some((f) => f.severity === 'positive')
               ? 'Health Indicators'
               : 'Health Flags'}
@@ -203,11 +219,14 @@ export function ClientMetricsPanel({
             {healthFlags.map((flag, index) => (
               <Alert
                 key={index}
-                variant={flag.severity === 'high' ? 'destructive' : 'default'}
-                className={
-                  flag.severity === 'positive' ? 'border-green-200 bg-green-50' : ''
+                variant={
+                  flag.severity === 'high' ? 'destructive' : 'default'
                 }
-              >
+                className={
+                  flag.severity === 'positive'
+                    ? 'border-green-200 bg-green-50'
+                    : ''
+                }>
                 <AlertDescription className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <span className="text-lg">{flag.icon}</span>
@@ -219,8 +238,7 @@ export function ClientMetricsPanel({
                       flag.severity === 'positive'
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : ''
-                    }
-                  >
+                    }>
                     {flag.severity}
                   </Badge>
                 </AlertDescription>

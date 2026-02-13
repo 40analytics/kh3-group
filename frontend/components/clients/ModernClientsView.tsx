@@ -51,7 +51,7 @@ export default function ModernClientsView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Client Portfolio</h2>
+          <h2 className="text-3xl font-display tracking-tight">Client Portfolio</h2>
           <p className="text-muted-foreground mt-1">
             Manage and grow your client relationships
           </p>

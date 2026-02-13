@@ -14,7 +14,7 @@ import {
   Cell,
 } from 'recharts';
 import {
-  Sparkles,
+  BrainCircuit,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
@@ -213,7 +213,7 @@ const DashboardClient: React.FC<DashboardClientProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="bg-indigo-600 p-2 rounded-lg">
-              <Sparkles className="h-5 w-5 text-white" />
+              <BrainCircuit className="h-5 w-5 text-white" />
             </div>
             <h2 className="text-lg font-bold text-gray-800">
               AI Executive Brief

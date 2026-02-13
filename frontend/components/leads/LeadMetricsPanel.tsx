@@ -56,69 +56,46 @@ export function LeadMetricsPanel({
     }
   };
 
+  const metricItems = [
+    { label: 'Days in Pipeline', value: metrics.daysInPipeline, icon: Clock },
+    { label: 'Since Contact', value: metrics.daysSinceLastContact, icon: Activity },
+    { label: 'Activities', value: metrics.activityCount, icon: Activity },
+    { label: 'Files', value: metrics.fileCount, icon: FileText },
+    ...(metrics.daysToQuotation !== undefined
+      ? [{ label: 'To Quotation', value: metrics.daysToQuotation, icon: TrendingUp }]
+      : []),
+    ...(metrics.daysFromQuotationToClose !== undefined
+      ? [{ label: 'Quote to Close', value: metrics.daysFromQuotationToClose, icon: TrendingUp }]
+      : []),
+  ];
+
   return (
     <div className="space-y-4">
       {/* Key Metrics */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="w-5 h-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="w-4 h-4" />
             Lead Metrics
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                Days in Pipeline
-              </div>
-              <div className="text-2xl font-bold">{metrics.daysInPipeline}</div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Activity className="w-4 h-4" />
-                Days Since Contact
-              </div>
-              <div className="text-2xl font-bold">{metrics.daysSinceLastContact}</div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Activity className="w-4 h-4" />
-                Activities
-              </div>
-              <div className="text-2xl font-bold">{metrics.activityCount}</div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileText className="w-4 h-4" />
-                Files
-              </div>
-              <div className="text-2xl font-bold">{metrics.fileCount}</div>
-            </div>
-
-            {metrics.daysToQuotation !== undefined && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <TrendingUp className="w-4 h-4" />
-                  Days to Quotation
+          <div className="grid grid-cols-3 gap-3">
+            {metricItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="rounded-lg border border-border bg-muted/40 p-3 text-center"
+                >
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1">
+                    <Icon className="w-3 h-3" />
+                    {item.label}
+                  </div>
+                  <div className="text-xl font-semibold font-display">{item.value}</div>
                 </div>
-                <div className="text-2xl font-bold">{metrics.daysToQuotation}</div>
-              </div>
-            )}
-
-            {metrics.daysFromQuotationToClose !== undefined && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <TrendingUp className="w-4 h-4" />
-                  Days Quote to Close
-                </div>
-                <div className="text-2xl font-bold">{metrics.daysFromQuotationToClose}</div>
-              </div>
-            )}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
