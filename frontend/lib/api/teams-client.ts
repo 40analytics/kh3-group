@@ -5,6 +5,10 @@ export async function getTeams(): Promise<Team[]> {
   return apiFetch<Team[]>('/teams');
 }
 
+export async function getTeam(id: string): Promise<Team> {
+  return apiFetch<Team>(`/teams/${id}`);
+}
+
 export async function createTeam(data: {
   name: string;
   description?: string;
@@ -34,6 +38,19 @@ export async function updateTeam(
 
 export async function deleteTeam(id: string): Promise<void> {
   return apiFetch<void>(`/teams/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function addTeamMember(teamId: string, userId: string): Promise<void> {
+  return apiFetch<void>(`/teams/${teamId}/members`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function removeTeamMember(teamId: string, userId: string): Promise<void> {
+  return apiFetch<void>(`/teams/${teamId}/members/${userId}`, {
     method: 'DELETE',
   });
 }

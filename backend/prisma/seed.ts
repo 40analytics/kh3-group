@@ -51,27 +51,9 @@ async function main() {
       role: 'MANAGER',
       status: 'Active',
       isEmailVerified: true,
-      teamName: 'Sales Team A',
     },
   });
   console.log('✅ Created Manager:', manager.email);
-
-  // Create or update Sales user (Team A)
-  const sales1 = await prisma.user.upsert({
-    where: { email: 'sales@kh3group.com' },
-    update: {},
-    create: {
-      email: 'sales@kh3group.com',
-      password: hashedPassword,
-      name: 'Sales Executive 1',
-      role: 'SALES',
-      status: 'Active',
-      isEmailVerified: true,
-      teamName: 'Sales Team A',
-      managerId: manager.id,
-    },
-  });
-  console.log('✅ Created Sales 1 (Team A):', sales1.email);
 
   // Create or update Manager 2 (Team B)
   const manager2 = await prisma.user.upsert({
@@ -84,15 +66,69 @@ async function main() {
       role: 'MANAGER',
       status: 'Active',
       isEmailVerified: true,
-      teamName: 'Sales Team B',
     },
   });
   console.log('✅ Created Manager 2:', manager2.email);
 
+  // Create Teams
+  const teamA = await prisma.team.upsert({
+    where: { id: 'seed-team-a' },
+    update: { managerId: manager.id },
+    create: {
+      id: 'seed-team-a',
+      name: 'Sales Team A',
+      description: 'Primary sales team',
+      type: 'SALES',
+      managerId: manager.id,
+    },
+  });
+  console.log('✅ Created Team:', teamA.name);
+
+  const teamB = await prisma.team.upsert({
+    where: { id: 'seed-team-b' },
+    update: { managerId: manager2.id },
+    create: {
+      id: 'seed-team-b',
+      name: 'Sales Team B',
+      description: 'Secondary sales team',
+      type: 'SALES',
+      managerId: manager2.id,
+    },
+  });
+  console.log('✅ Created Team:', teamB.name);
+
+  // Assign managers to their teams
+  await prisma.user.update({
+    where: { id: manager.id },
+    data: { teamId: teamA.id, teamName: 'Sales Team A' },
+  });
+  await prisma.user.update({
+    where: { id: manager2.id },
+    data: { teamId: teamB.id, teamName: 'Sales Team B' },
+  });
+
+  // Create or update Sales user (Team A)
+  const sales1 = await prisma.user.upsert({
+    where: { email: 'sales@kh3group.com' },
+    update: { teamId: teamA.id, teamName: 'Sales Team A', managerId: manager.id },
+    create: {
+      email: 'sales@kh3group.com',
+      password: hashedPassword,
+      name: 'Sales Executive 1',
+      role: 'SALES',
+      status: 'Active',
+      isEmailVerified: true,
+      teamName: 'Sales Team A',
+      teamId: teamA.id,
+      managerId: manager.id,
+    },
+  });
+  console.log('✅ Created Sales 1 (Team A):', sales1.email);
+
   // Create or update Sales 2 (Team B)
   const sales2 = await prisma.user.upsert({
     where: { email: 'sales2@kh3group.com' },
-    update: {},
+    update: { teamId: teamB.id, teamName: 'Sales Team B', managerId: manager2.id },
     create: {
       email: 'sales2@kh3group.com',
       password: hashedPassword,
@@ -101,6 +137,7 @@ async function main() {
       status: 'Active',
       isEmailVerified: true,
       teamName: 'Sales Team B',
+      teamId: teamB.id,
       managerId: manager2.id,
     },
   });
@@ -109,7 +146,7 @@ async function main() {
   // Create or update Sales 3 (Team B)
   const sales3 = await prisma.user.upsert({
     where: { email: 'sales3@kh3group.com' },
-    update: {},
+    update: { teamId: teamB.id, teamName: 'Sales Team B', managerId: manager2.id },
     create: {
       email: 'sales3@kh3group.com',
       password: hashedPassword,
@@ -118,6 +155,7 @@ async function main() {
       status: 'Active',
       isEmailVerified: true,
       teamName: 'Sales Team B',
+      teamId: teamB.id,
       managerId: manager2.id,
     },
   });

@@ -22,6 +22,7 @@ import { Team } from '@/lib/types';
 import { getTeams, deleteTeam } from '@/lib/api/teams-client';
 import { CreateTeamDialog } from './CreateTeamDialog';
 import { EditTeamDialog } from './EditTeamDialog';
+import { TeamDetailDialog } from './TeamDetailDialog';
 import { UserResponse } from '@/lib/api/users-client';
 import {
   AlertDialog,
@@ -36,11 +37,13 @@ import {
 
 interface TeamListProps {
   managers: UserResponse[];
+  allUsers: UserResponse[];
   currentUserRole: string;
 }
 
 export function TeamList({
   managers,
+  allUsers,
   currentUserRole,
 }: TeamListProps) {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -51,6 +54,7 @@ export function TeamList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [detailTeamId, setDetailTeamId] = useState<string | null>(null);
 
   const loadTeams = async () => {
     try {
@@ -142,7 +146,11 @@ export function TeamList({
               </TableHeader>
               <TableBody>
                 {teams.map((team) => (
-                  <TableRow key={team.id}>
+                  <TableRow
+                    key={team.id}
+                    className="cursor-pointer"
+                    onClick={() => setDetailTeamId(team.id)}
+                  >
                     <TableCell className="font-medium">
                       {team.name}
                       {team.description && (
@@ -177,7 +185,7 @@ export function TeamList({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         {canManageTeams && (
                           <>
                             <Button
@@ -259,6 +267,16 @@ export function TeamList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TeamDetailDialog
+        teamId={detailTeamId}
+        open={!!detailTeamId}
+        onClose={() => setDetailTeamId(null)}
+        managers={managers}
+        allUsers={allUsers}
+        canEdit={canManageTeams}
+        onTeamUpdated={loadTeams}
+      />
     </div>
   );
 }

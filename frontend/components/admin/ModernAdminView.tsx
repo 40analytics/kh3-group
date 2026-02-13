@@ -806,6 +806,7 @@ export default function ModernAdminView({
         <TabsContent value="teams" className="space-y-4">
           <TeamList
             managers={managers}
+            allUsers={users}
             currentUserRole={currentUser.role}
           />
         </TabsContent>
