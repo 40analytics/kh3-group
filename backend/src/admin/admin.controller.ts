@@ -6,20 +6,16 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Request,
   Query,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AuditService } from '../audit/audit.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Permissions } from '../permissions/permissions.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
@@ -27,19 +23,19 @@ export class AdminController {
   ) {}
 
   @Get('users')
-  @Roles('CEO', 'ADMIN', 'MANAGER')
+  @Permissions('users:view')
   async getAllUsers(@Request() req) {
     return this.adminService.getAllUsers(req.user.id, req.user.role);
   }
 
   @Post('users')
-  @Roles('CEO', 'ADMIN', 'MANAGER')
+  @Permissions('users:create')
   async createUser(@Request() req, @Body() createUserDto: CreateUserDto) {
     return this.adminService.createUser(req.user.id, createUserDto);
   }
 
   @Patch('users/:id')
-  @Roles('CEO', 'ADMIN', 'MANAGER')
+  @Permissions('users:edit')
   async updateUser(
     @Request() req,
     @Param('id') id: string,
@@ -49,35 +45,31 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('users:delete')
   async deleteUser(@Request() req, @Param('id') id: string) {
     return this.adminService.deleteUser(req.user.id, id);
   }
 
   @Get('ai-settings')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('ai_settings:view')
   getAISettings() {
     return this.adminService.getAISettings();
   }
 
   @Patch('ai-settings')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('ai_settings:edit')
   updateAISettings(@Body() updateSettingsDto: any) {
     return this.adminService.updateAISettings(updateSettingsDto);
   }
 
   @Get('api-keys/status')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('ai_settings:view')
   checkAPIKeys() {
     return this.adminService.checkAPIKeys();
   }
 
-  /**
-   * Get all audit logs with optional filters
-   * CEO and ADMIN only
-   */
   @Get('audit-logs')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('audit_logs:view')
   async getAllAuditLogs(
     @Query('action') action?: string,
     @Query('userId') userId?: string,
@@ -92,12 +84,8 @@ export class AdminController {
     return this.auditService.getAllLogs(parseInt(limit));
   }
 
-  /**
-   * Get audit logs for a specific user
-   * CEO and ADMIN only
-   */
   @Get('audit-logs/user/:userId')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('audit_logs:view')
   async getAuditLogsByUser(
     @Param('userId') userId: string,
     @Query('limit') limit: string = '100',
@@ -105,12 +93,8 @@ export class AdminController {
     return this.auditService.getLogsForUser(userId, parseInt(limit));
   }
 
-  /**
-   * Get audit logs by action type
-   * CEO and ADMIN only
-   */
   @Get('audit-logs/action/:action')
-  @Roles('CEO', 'ADMIN')
+  @Permissions('audit_logs:view')
   async getAuditLogsByAction(
     @Param('action') action: string,
     @Query('limit') limit: string = '100',

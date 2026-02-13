@@ -37,7 +37,13 @@
       "Bash(gcloud services enable:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx prisma migrate:*)",
+      "mcp__ide__getDiagnostics"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "shadcn",
+    "nestjs-mcp"
+  ]
 }

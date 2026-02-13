@@ -16,6 +16,9 @@ import { FilesModule } from './files/files.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from './permissions/permissions.guard';
+import { PermissionsModule } from './permissions/permissions.module';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -37,11 +40,17 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ProjectsModule,
     AiModule,
     AdminModule,
+    TeamsModule,
+    PermissionsModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
   ],
 })

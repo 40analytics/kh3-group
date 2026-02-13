@@ -92,4 +92,11 @@ export class AuthController {
   async verifyToken(@CurrentUser() user: any) {
     return { valid: true, user };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('permissions')
+  async getPermissions(@CurrentUser() user: any) {
+    const permissions = await this.authService.getUserPermissions(user.id);
+    return { permissions };
+  }
 }

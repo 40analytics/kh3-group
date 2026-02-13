@@ -2,67 +2,33 @@ import {
   Controller,
   Get,
   Query,
-  UseGuards,
-  Request,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { AiService } from '../ai/ai.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Permissions } from '../permissions/permissions.decorator';
 
 @Controller('dashboard')
-@UseGuards(JwtAuthGuard)
 export class DashboardController {
   constructor(
     private dashboardService: DashboardService,
     private aiService: AiService,
   ) {}
 
-  /**
-   * Get dashboard metrics
-   * CEO and ADMIN only (as per description.txt: "Business Performance Dashboard (CEO View)")
-   */
   @Get('metrics')
+  @Permissions('dashboard:view')
   async getMetrics(
     @Query('period') period: 'week' | 'month' | 'quarter' = 'month',
-    @Request() req: any,
   ) {
-    // Check role permissions - CEO and ADMIN only
-    const userRole = req.user?.role;
-    if (!['CEO', 'ADMIN'].includes(userRole)) {
-      throw new HttpException(
-        'Insufficient permissions to view dashboard. CEO access required.',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
     return this.dashboardService.getMetrics(period);
   }
 
-  /**
-   * Get AI-generated executive summary
-   * CEO and ADMIN only
-   */
   @Get('executive-summary')
+  @Permissions('dashboard:view')
   async getExecutiveSummary(
     @Query('provider') provider: string = 'anthropic',
     @Query('period') period: 'week' | 'month' | 'quarter' = 'month',
-    @Request() req: any,
   ) {
-    // Check role permissions - CEO and ADMIN only
-    const userRole = req.user?.role;
-    if (!['CEO', 'ADMIN'].includes(userRole)) {
-      throw new HttpException(
-        'Insufficient permissions to view executive summary. CEO access required.',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    // Get dashboard metrics
     const metrics = await this.dashboardService.getMetrics(period);
-
-    // Generate AI summary
     const summary = await this.aiService.generateExecutiveSummary(
       metrics,
       provider,
@@ -82,54 +48,28 @@ export class DashboardController {
     };
   }
 
-  /**
-   * Get revenue breakdown
-   * CEO and ADMIN only
-   */
   @Get('revenue-breakdown')
+  @Permissions('dashboard:view')
   async getRevenueBreakdown(
     @Query('period') period: 'week' | 'month' | 'quarter' = 'month',
-    @Request() req: any,
   ) {
-    // Check role permissions - CEO and ADMIN only
-    const userRole = req.user?.role;
-    if (!['CEO', 'ADMIN'].includes(userRole)) {
-      throw new HttpException(
-        'Insufficient permissions to view revenue breakdown. CEO access required.',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
     const metrics = await this.dashboardService.getMetrics(period);
 
     return {
       totalRevenue: metrics.totalRevenue,
       monthlyRevenue: metrics.monthlyRevenue,
       quarterlyRevenue: metrics.quarterlyRevenue,
-      byClient: metrics.revenueByClient.slice(0, 10), // Top 10
-      byProject: metrics.revenueByProject.slice(0, 10), // Top 10
+      byClient: metrics.revenueByClient.slice(0, 10),
+      byProject: metrics.revenueByProject.slice(0, 10),
       concentration: metrics.revenueConcentration,
     };
   }
 
-  /**
-   * Get project analytics
-   * CEO and ADMIN only
-   */
   @Get('project-analytics')
+  @Permissions('dashboard:view')
   async getProjectAnalytics(
     @Query('period') period: 'week' | 'month' | 'quarter' = 'month',
-    @Request() req: any,
   ) {
-    // Check role permissions - CEO and ADMIN only
-    const userRole = req.user?.role;
-    if (!['CEO', 'ADMIN'].includes(userRole)) {
-      throw new HttpException(
-        'Insufficient permissions to view project analytics. CEO access required.',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
     const metrics = await this.dashboardService.getMetrics(period);
 
     return {

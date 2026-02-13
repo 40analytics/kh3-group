@@ -18,7 +18,7 @@ export class AdminService {
     private prisma: PrismaService,
     private config: ConfigService,
     private emailService: EmailService,
-    private auditService: AuditService,
+    private auditService: AuditService
   ) {}
 
   // ==================== Permission Validation Methods ====================
@@ -26,7 +26,10 @@ export class AdminService {
   /**
    * Check if current user can manage a user with the target role
    */
-  private canManageUser(currentUserRole: string, targetUserRole: string): boolean {
+  private canManageUser(
+    currentUserRole: string,
+    targetUserRole: string
+  ): boolean {
     // CEO can manage: CEO, ADMIN, MANAGER, SALES
     if (currentUserRole === 'CEO') return true;
 
@@ -49,12 +52,12 @@ export class AdminService {
   private async validateUserCreation(
     currentUserId: string,
     currentUserRole: string,
-    createDto: CreateUserDto,
+    createDto: CreateUserDto
   ): Promise<void> {
     // Check if user can create this role
     if (!this.canManageUser(currentUserRole, createDto.role)) {
       throw new ForbiddenException(
-        `${currentUserRole} users cannot create ${createDto.role} users`,
+        `${currentUserRole} users cannot create ${createDto.role} users`
       );
     }
 
@@ -80,15 +83,30 @@ export class AdminService {
           throw new BadRequestException('Invalid manager ID');
         }
       } else {
-        throw new BadRequestException('SALES users must have a manager');
+        throw new BadRequestException(
+          'SALES users must have a manager'
+        );
       }
     }
 
-    // Validate teamName requirements
-    if (['MANAGER', 'SALES'].includes(createDto.role) && !createDto.teamName) {
-      throw new BadRequestException(
-        `${createDto.role} users must have a teamName`,
-      );
+    // Validate teamName or teamId requirements
+    // Deprecating teamName in favor of teamId
+    if (['MANAGER', 'SALES'].includes(createDto.role)) {
+      if (!createDto.teamName && !createDto.teamId) {
+        throw new BadRequestException(
+          `${createDto.role} users must have a team assigned`
+        );
+      }
+
+      // If teamId is provided, validate it exists
+      if (createDto.teamId) {
+        const team = await this.prisma.team.findUnique({
+          where: { id: createDto.teamId },
+        });
+        if (!team) {
+          throw new NotFoundException('Team not found');
+        }
+      }
     }
   }
 
@@ -99,7 +117,7 @@ export class AdminService {
     currentUserId: string,
     currentUserRole: string,
     targetUserId: string,
-    updateDto: UpdateUserDto,
+    updateDto: UpdateUserDto
   ): Promise<any> {
     // Fetch target user
     const targetUser = await this.prisma.user.findUnique({
@@ -113,14 +131,14 @@ export class AdminService {
     // Users cannot modify themselves through this endpoint
     if (currentUserId === targetUserId) {
       throw new ForbiddenException(
-        'Use profile settings to update your own account',
+        'Use profile settings to update your own account'
       );
     }
 
     // Check permission to modify this user
     if (!this.canManageUser(currentUserRole, targetUser.role)) {
       throw new ForbiddenException(
-        `You don't have permission to modify ${targetUser.role} users`,
+        `You don't have permission to modify ${targetUser.role} users`
       );
     }
 
@@ -128,7 +146,7 @@ export class AdminService {
     if (updateDto.role && updateDto.role !== targetUser.role) {
       if (!this.canManageUser(currentUserRole, updateDto.role)) {
         throw new ForbiddenException(
-          `You don't have permission to change users to ${updateDto.role} role`,
+          `You don't have permission to change users to ${updateDto.role} role`
         );
       }
     }
@@ -137,8 +155,18 @@ export class AdminService {
     if (currentUserRole === 'MANAGER') {
       if (targetUser.managerId !== currentUserId) {
         throw new ForbiddenException(
-          'You can only modify your own team members',
+          'You can only modify your own team members'
         );
+      }
+    }
+
+    // If teamId is being updated, validate it
+    if (updateDto.teamId) {
+      const team = await this.prisma.team.findUnique({
+        where: { id: updateDto.teamId },
+      });
+      if (!team) {
+        throw new NotFoundException('Team not found');
       }
     }
 
@@ -153,7 +181,9 @@ export class AdminService {
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';
     for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += chars.charAt(
+        Math.floor(Math.random() * chars.length)
+      );
     }
     return password;
   }
@@ -172,7 +202,10 @@ export class AdminService {
     }
     // MANAGER sees only their team
     else if (currentUserRole === 'MANAGER') {
-      where.OR = [{ managerId: currentUserId }, { id: currentUserId }];
+      where.OR = [
+        { managerId: currentUserId },
+        { id: currentUserId },
+      ];
     }
     // SALES sees only themselves
     else if (currentUserRole === 'SALES') {
@@ -197,17 +230,30 @@ export class AdminService {
         teamMembers: {
           select: { id: true, name: true, email: true },
         },
+        team: {
+          select: { id: true, name: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return { users };
+    // Transform result to include team name from relation if available, fallback to legacy teamName
+    // This ensures frontend compatibility
+    const usersWithTeam = users.map((user) => ({
+      ...user,
+      teamName: user.team?.name || user.teamName,
+    }));
+
+    return { users: usersWithTeam };
   }
 
   /**
    * Create a new user with hierarchical validation
    */
-  async createUser(currentUserId: string, createUserDto: CreateUserDto) {
+  async createUser(
+    currentUserId: string,
+    createUserDto: CreateUserDto
+  ) {
     const currentUser = await this.prisma.user.findUnique({
       where: { id: currentUserId },
     });
@@ -220,7 +266,7 @@ export class AdminService {
     await this.validateUserCreation(
       currentUserId,
       currentUser.role,
-      createUserDto,
+      createUserDto
     );
 
     // Generate secure temporary password
@@ -234,7 +280,8 @@ export class AdminService {
         name: createUserDto.name,
         password: hashedPassword,
         role: createUserDto.role,
-        teamName: createUserDto.teamName,
+        teamName: createUserDto.teamName, // Keep for backward compatibility if provided
+        teamId: createUserDto.teamId,
         managerId: createUserDto.managerId,
         status: 'Active',
         isEmailVerified: false,
@@ -246,7 +293,14 @@ export class AdminService {
         role: true,
         status: true,
         teamName: true,
+        teamId: true,
+        team: {
+          select: { id: true, name: true },
+        },
         managerId: true,
+        manager: {
+          select: { name: true, email: true },
+        },
         createdAt: true,
         updatedAt: true,
       },
@@ -257,7 +311,7 @@ export class AdminService {
       await this.emailService.sendWelcomeEmail(
         user.email,
         user.name,
-        tempPassword,
+        tempPassword
       );
     } catch (error) {
       // Email failure should not block user creation
@@ -270,7 +324,11 @@ export class AdminService {
         userId: currentUserId,
         action: 'CREATE_USER',
         targetUserId: user.id,
-        details: { role: user.role, email: user.email, teamName: user.teamName },
+        details: {
+          role: user.role,
+          email: user.email,
+          teamName: user.teamName,
+        },
       });
     } catch (error) {
       console.error('Failed to log audit:', error);
@@ -288,7 +346,7 @@ export class AdminService {
   async updateUser(
     currentUserId: string,
     targetUserId: string,
-    updateUserDto: UpdateUserDto,
+    updateUserDto: UpdateUserDto
   ) {
     const currentUser = await this.prisma.user.findUnique({
       where: { id: currentUserId },
@@ -303,7 +361,7 @@ export class AdminService {
       currentUserId,
       currentUser.role,
       targetUserId,
-      updateUserDto,
+      updateUserDto
     );
 
     // Update user
@@ -317,7 +375,14 @@ export class AdminService {
         role: true,
         status: true,
         teamName: true,
+        teamId: true,
+        team: {
+          select: { id: true, name: true },
+        },
         managerId: true,
+        manager: {
+          select: { name: true, email: true },
+        },
         createdAt: true,
         updatedAt: true,
       },
@@ -360,7 +425,9 @@ export class AdminService {
 
     // Cannot delete yourself
     if (currentUserId === targetUserId) {
-      throw new ForbiddenException('You cannot delete your own account');
+      throw new ForbiddenException(
+        'You cannot delete your own account'
+      );
     }
 
     // Only CEO can delete ADMIN users
@@ -379,7 +446,7 @@ export class AdminService {
       });
       if (teamMembers > 0) {
         throw new BadRequestException(
-          'Cannot delete manager with active team members. Please reassign team members first.',
+          'Cannot delete manager with active team members. Please reassign team members first.'
         );
       }
     }
@@ -397,7 +464,7 @@ export class AdminService {
         details: {
           deletedEmail: targetUser.email,
           deletedRole: targetUser.role,
-          deletedName: targetUser.name
+          deletedName: targetUser.name,
         },
       });
     } catch (error) {

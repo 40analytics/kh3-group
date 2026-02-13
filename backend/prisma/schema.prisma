@@ -217,8 +217,15 @@ model User {
   lastLogin              DateTime?
 
   // Team and hierarchy
-  teamName    String? // Team identifier for grouping users
-  managerId   String? // Reports to this manager
+  teamName    String? // Team identifier for grouping users (Deprecated)
+  
+  // New Team structure
+  teamId      String?
+  team        Team?    @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
+  
+  managedTeams Team[]  @relation("ManagerTeams")
+
+  managerId   String? // Reports to this manager (Direct report)
   manager     User?   @relation("ManagerTeam", fields: [managerId], references: [id], onDelete: SetNull)
   teamMembers User[]  @relation("ManagerTeam")
 
@@ -278,4 +285,35 @@ model AuditLog {
   @@index([targetUserId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model RolePermission {
+  id         String   @id @default(uuid())
+  role       String   // 'CEO', 'ADMIN', 'MANAGER', 'SALES'
+  permission String   // e.g. 'leads:view', 'users:delete'
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([role, permission])
+  @@index([role])
+  @@map("role_permissions")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  type        String   @default("SALES") // 'SALES', 'SUPPORT', etc.
+
+  // Manager of the team (can oversee multiple teams)
+  managerId   String?
+  manager     User?    @relation("ManagerTeams", fields: [managerId], references: [id])
+
+  // Members of the team
+  members     User[]   @relation("TeamMembers")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("teams")
 }

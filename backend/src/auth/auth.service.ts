@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { PermissionsService } from '../permissions/permissions.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     private database: PrismaService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private permissionsService: PermissionsService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -58,6 +60,8 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
+    const permissions = await this.permissionsService.getPermissionsForRole(user.role);
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -66,7 +70,17 @@ export class AuthService {
         name: user.name,
         role: user.role,
       },
+      permissions,
     };
+  }
+
+  async getUserPermissions(userId: string): Promise<string[]> {
+    const user = await this.database.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (!user) return [];
+    return this.permissionsService.getPermissionsForRole(user.role);
   }
 
   async register(registerDto: RegisterDto) {

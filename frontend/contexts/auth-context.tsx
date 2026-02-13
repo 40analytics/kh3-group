@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import Cookies from 'js-cookie';
 
 export interface User {
@@ -13,18 +13,37 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (token: string, user: User) => void;
+  permissions: string[];
+  login: (token: string, user: User, permissions?: string[]) => void;
   logout: () => void;
+  hasPermission: (permission: string) => boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPermissions = useCallback(async (authToken: string) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/permissions`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPermissions(data.permissions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch permissions:', error);
+    }
+  }, []);
 
   // Restore session from cookies on mount
   useEffect(() => {
@@ -36,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
         setUser(parsedUser);
+        fetchPermissions(storedToken);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
         Cookies.remove('token');
@@ -44,11 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setIsLoading(false);
-  }, []);
+  }, [fetchPermissions]);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, newUser: User, newPermissions?: string[]) => {
     setToken(newToken);
     setUser(newUser);
+
+    if (newPermissions) {
+      setPermissions(newPermissions);
+    } else {
+      fetchPermissions(newToken);
+    }
 
     // Store in cookies with 7 day expiry
     Cookies.set('token', newToken, { expires: 7, sameSite: 'lax' });
@@ -58,15 +84,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setToken(null);
     setUser(null);
+    setPermissions([]);
     Cookies.remove('token');
     Cookies.remove('user');
   };
 
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!user) return false;
+      // CEO always has all permissions
+      if (user.role === 'CEO') return true;
+      return permissions.includes(permission);
+    },
+    [user, permissions],
+  );
+
   const value = {
     user,
     token,
+    permissions,
     login,
     logout,
+    hasPermission,
     isAuthenticated: !!token && !!user,
     isLoading,
   };

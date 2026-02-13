@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail()
@@ -13,7 +19,11 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  teamName?: string;
+  teamName?: string; // Deprecated
+
+  @IsOptional()
+  @IsString()
+  teamId?: string;
 
   @IsOptional()
   @IsString()

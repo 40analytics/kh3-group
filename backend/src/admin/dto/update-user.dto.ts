@@ -10,4 +10,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsEnum(['CEO', 'ADMIN', 'MANAGER', 'SALES'])
   role?: string;
+
+  @IsOptional()
+  @IsString()
+  teamId?: string;
+
+  @IsOptional()
+  @IsString()
+  managerId?: string;
 }

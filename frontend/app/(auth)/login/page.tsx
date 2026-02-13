@@ -56,7 +56,7 @@ function LoginForm() {
       setApiError('');
 
       const response = await authApi.login(data.email, data.password);
-      login(response.access_token, response.user);
+      login(response.access_token, response.user, response.permissions);
 
       // Redirect to the page they were trying to access, or dashboard
       const from = searchParams.get('from') || '/dashboard';
