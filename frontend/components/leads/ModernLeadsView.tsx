@@ -32,6 +32,7 @@ import {
   Sparkles,
   Loader2,
   TrendingUp,
+  Trash2,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import type { Lead } from '@/lib/types';
@@ -56,6 +57,18 @@ import { FileUploadSection } from './FileUploadSection';
 import { LeadMetricsPanel } from './LeadMetricsPanel';
 import { AISummaryDialog } from './AISummaryDialog';
 import { ConvertLeadDialog } from './ConvertLeadDialog';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Manager {
   id: string;
@@ -209,9 +222,12 @@ export default function ModernLeadsView({
   managers,
 }: ModernLeadsViewProps) {
   const router = useRouter();
+  const { hasPermission } = useAuth();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState<Lead | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(
@@ -369,6 +385,22 @@ export default function ModernLeadsView({
     }
   };
 
+  const handleDeleteLead = async () => {
+    if (!selectedLead) return;
+    setIsDeleting(true);
+    try {
+      await api.leads.delete(selectedLead.id);
+      setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
+      setSelectedLead(null);
+      setDeleteDialogOpen(false);
+      toast.success('Lead deleted');
+    } catch (error) {
+      toast.error('Failed to delete lead');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -381,7 +413,7 @@ export default function ModernLeadsView({
             Track and manage your sales opportunities
           </p>
         </div>
-        {['CEO', 'ADMIN', 'MANAGER'].includes(currentUser.role) && (
+        {hasPermission('leads:create') && (
           <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Add Lead
@@ -783,6 +815,28 @@ export default function ModernLeadsView({
                 currentUserId={currentUser.id}
                 onFilesChanged={() => loadFiles(selectedLead.id)}
               />
+
+              {/* Danger Zone */}
+              {hasPermission('leads:delete') && (
+                <>
+                  <Separator />
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <h4 className="text-sm font-semibold text-red-900 mb-1">Danger Zone</h4>
+                    <p className="text-xs text-red-700 mb-3">
+                      Permanently remove this lead and all associated data. This cannot be undone.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setDeleteDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Lead
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -802,6 +856,37 @@ export default function ModernLeadsView({
         onOpenChange={setConvertDialogOpen}
         managers={managers}
       />
+
+      {/* Delete Lead Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{' '}
+              <strong>{selectedLead?.contactName || selectedLead?.name}</strong> ({selectedLead?.company}).
+              All associated activities and files will also be removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteLead}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

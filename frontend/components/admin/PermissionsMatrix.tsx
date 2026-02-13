@@ -113,6 +113,9 @@ export function PermissionsMatrix({ canEdit }: PermissionsMatrixProps) {
     );
   }
 
+  // Calculate column width percentages: permission label gets ~30%, rest split evenly
+  const roleColWidth = `${Math.floor(70 / roles.length)}%`;
+
   return (
     <Card>
       <CardHeader>
@@ -126,12 +129,18 @@ export function PermissionsMatrix({ canEdit }: PermissionsMatrixProps) {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col style={{ width: '30%' }} />
+              {roles.map((role) => (
+                <col key={role} style={{ width: roleColWidth }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="border-b">
-                <th className="text-left py-3 px-2 font-medium w-[200px]">Permission</th>
+                <th className="text-left py-3 px-3 font-medium">Permission</th>
                 {roles.map((role) => (
-                  <th key={role} className="text-center py-3 px-2 min-w-[100px]">
+                  <th key={role} className="py-3 px-2">
                     <div className="flex flex-col items-center gap-1">
                       <Badge variant="outline" className={getRoleColor(role)}>
                         {role}
@@ -163,25 +172,27 @@ export function PermissionsMatrix({ canEdit }: PermissionsMatrixProps) {
                   <tr className="bg-muted/50">
                     <td
                       colSpan={roles.length + 1}
-                      className="py-2 px-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground"
+                      className="py-2 px-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground"
                     >
                       {moduleName}
                     </td>
                   </tr>
                   {modulePerms.map((perm) => (
                     <tr key={perm.key} className="border-b border-muted/30 hover:bg-muted/20">
-                      <td className="py-2 px-2 text-sm">{perm.label}</td>
+                      <td className="py-2.5 px-3 text-sm">{perm.label}</td>
                       {roles.map((role) => {
                         const checked = (matrix[role] || []).includes(perm.key);
                         const isCeo = role === 'CEO';
                         return (
-                          <td key={`${role}-${perm.key}`} className="text-center py-2 px-2">
-                            <Checkbox
-                              checked={isCeo ? true : checked}
-                              disabled={isCeo || !canEdit}
-                              onCheckedChange={() => togglePermission(role, perm.key)}
-                              className={isCeo ? 'opacity-50' : ''}
-                            />
+                          <td key={`${role}-${perm.key}`} className="py-2.5 px-2">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={isCeo ? true : checked}
+                                disabled={isCeo || !canEdit}
+                                onCheckedChange={() => togglePermission(role, perm.key)}
+                                className={isCeo ? 'opacity-50' : ''}
+                              />
+                            </div>
                           </td>
                         );
                       })}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import type { Client } from '@/lib/types';
 import { CreateClientDialog } from './CreateClientDialog';
+import { useAuth } from '@/contexts/auth-context';
 import { ClientStatsCards } from './ClientStatsCards';
 import { ClientCard } from './ClientCard';
 import { ClientDetailDialog } from './ClientDetailDialog';
@@ -33,6 +34,7 @@ export default function ModernClientsView({
   managers,
 }: ModernClientsViewProps) {
   const router = useRouter();
+  const { hasPermission } = useAuth();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -54,7 +56,7 @@ export default function ModernClientsView({
             Manage and grow your client relationships
           </p>
         </div>
-        {['CEO', 'ADMIN', 'MANAGER'].includes(currentUser.role) && (
+        {hasPermission('clients:create') && (
           <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Add Client

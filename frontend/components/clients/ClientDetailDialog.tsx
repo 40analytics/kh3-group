@@ -18,16 +18,45 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Heart, Sparkles, Mail, Phone, MapPin, Globe, Link2 } from 'lucide-react';
-import type { Client } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
+import {
+  Loader2,
+  Heart,
+  Sparkles,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Link2,
+  Trash2,
+} from 'lucide-react';
+import type { Client, UpsellStrategy } from '@/lib/types';
 import { api } from '@/lib/api/client';
-import { clientActivitiesApi, type Activity } from '@/lib/api/client-activities';
-import { clientFilesApi, type FileUpload } from '@/lib/api/client-files';
+import {
+  clientActivitiesApi,
+  type Activity,
+} from '@/lib/api/client-activities';
+import {
+  clientFilesApi,
+  type FileUpload,
+} from '@/lib/api/client-files';
 import { projectsApi, type Project } from '@/lib/api/projects-client';
 import { ClientMetricsPanel } from './ClientMetricsPanel';
 import { ClientActivityTimeline } from './ClientActivityTimeline';
 import { ClientFileUploadSection } from './ClientFileUploadSection';
 import { ClientProjectsList } from './ClientProjectsList';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClientDetailDialogProps {
   client: Client | null;
@@ -70,14 +99,19 @@ export function ClientDetailDialog({
   accountManagers,
   onClientUpdated,
 }: ClientDetailDialogProps) {
-  const [selectedClient, setSelectedClient] = useState<Client | null>(client);
+  const { hasPermission } = useAuth();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(
+    client
+  );
   const [loadingHealth, setLoadingHealth] = useState(false);
   const [loadingUpsell, setLoadingUpsell] = useState(false);
   const [loadingAutoUpdate, setLoadingAutoUpdate] = useState(false);
-  const [upsellData, setUpsellData] = useState<any>(null);
+  const [upsellData, setUpsellData] = useState<UpsellStrategy | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setSelectedClient(client);
@@ -88,11 +122,12 @@ export function ClientDetailDialog({
 
   const loadClientData = async (clientId: string) => {
     try {
-      const [activitiesData, filesData, projectsData] = await Promise.all([
-        clientActivitiesApi.getActivities(clientId),
-        clientFilesApi.getFiles(clientId),
-        projectsApi.getByClient(clientId),
-      ]);
+      const [activitiesData, filesData, projectsData] =
+        await Promise.all([
+          clientActivitiesApi.getActivities(clientId),
+          clientFilesApi.getFiles(clientId),
+          projectsApi.getByClient(clientId),
+        ]);
       setActivities(activitiesData);
       setFiles(filesData);
       setProjects(projectsData);
@@ -105,7 +140,9 @@ export function ClientDetailDialog({
     if (!selectedClient?.id) return;
     setLoadingHealth(true);
     try {
-      const result = await api.clients.generateHealthReport(selectedClient.id);
+      const result = await api.clients.generateHealthReport(
+        selectedClient.id
+      );
       const updated = {
         ...selectedClient,
         healthScore: result.healthScore,
@@ -140,7 +177,9 @@ export function ClientDetailDialog({
     if (!selectedClient?.id) return;
     setLoadingUpsell(true);
     try {
-      const result = await api.clients.generateUpsellStrategy(selectedClient.id);
+      const result = await api.clients.generateUpsellStrategy(
+        selectedClient.id
+      );
       setUpsellData(result);
     } catch (error) {
       console.error('Failed to generate upsell strategy:', error);
@@ -156,328 +195,477 @@ export function ClientDetailDialog({
     }
   };
 
+  const handleDeleteClient = async () => {
+    if (!selectedClient?.id) return;
+    setIsDeleting(true);
+    try {
+      await api.clients.delete(selectedClient.id);
+      toast.success('Client deleted');
+      setDeleteDialogOpen(false);
+      onClose();
+      onClientUpdated();
+    } catch {
+      toast.error('Failed to delete client');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!selectedClient) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-bold text-2xl">
-                {selectedClient.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <DialogTitle className="text-2xl">{selectedClient.name}</DialogTitle>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                <span>{selectedClient.industry}</span>
-                <span>•</span>
-                <Badge variant="outline" className={getStatusColor(selectedClient.status)}>
-                  {selectedClient.status}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <Tabs defaultValue="overview" className="mt-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="activities">Activities</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
-            <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="growth">Growth</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Lifetime Revenue</p>
-                  <p className="text-2xl font-bold">
-                    ${((selectedClient.lifetimeRevenue || 0) / 1000).toFixed(0)}k
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Segment</p>
-                  <Badge className="mt-1">{selectedClient.segment}</Badge>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Contact Information */}
-            {(selectedClient.email || selectedClient.phone || selectedClient.address || selectedClient.website) && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">Contact Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {selectedClient.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Email</p>
-                        <p className="font-medium">{selectedClient.email}</p>
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Phone</p>
-                        <p className="font-medium">{selectedClient.phone}</p>
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.address && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Address</p>
-                        <p className="font-medium">{selectedClient.address}</p>
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Website</p>
-                        <p className="font-medium">{selectedClient.website}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Account Details */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Account Details</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Account Manager</p>
-                  <p className="font-medium">
-                    {selectedClient.accountManager?.name || 'Unassigned'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Industry</p>
-                  <p className="font-medium">{selectedClient.industry}</p>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-bold text-2xl">
+                  {selectedClient.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <DialogTitle className="text-2xl">
+                  {selectedClient.name}
+                </DialogTitle>
+                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                  <span>{selectedClient.industry}</span>
+                  <span>•</span>
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(selectedClient.status)}>
+                    {selectedClient.status}
+                  </Badge>
                 </div>
               </div>
             </div>
+          </DialogHeader>
 
-            {/* Original Lead Conversion */}
-            {selectedClient.convertedFromLead && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-blue-500" />
-                  Converted From Lead
-                </h4>
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-3">
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">{selectedClient.convertedFromLead.contactName}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {selectedClient.convertedFromLead.stage}
-                        </Badge>
-                      </div>
-                      <p className="text-muted-foreground">{selectedClient.convertedFromLead.company}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Original Value: ${selectedClient.convertedFromLead.value.toLocaleString()}
-                      </p>
-                    </div>
+          <Tabs defaultValue="overview" className="mt-4">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="activities">Activities</TabsTrigger>
+              <TabsTrigger value="files">Files</TabsTrigger>
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="health">Health</TabsTrigger>
+              <TabsTrigger value="growth">Growth</TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Lifetime Revenue
+                    </p>
+                    <p className="text-2xl font-bold">
+                      $
+                      {(
+                        (selectedClient.lifetimeRevenue || 0) / 1000
+                      ).toFixed(0)}
+                      k
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Segment
+                    </p>
+                    <Badge className="mt-1">
+                      {selectedClient.segment}
+                    </Badge>
                   </CardContent>
                 </Card>
               </div>
-            )}
 
-            {/* Metrics Panel */}
-            {selectedClient.metrics && (
-              <ClientMetricsPanel
-                metrics={selectedClient.metrics}
-                healthFlags={selectedClient.healthFlags}
-                suggestedActions={selectedClient.suggestedActions}
+              {/* Contact Information */}
+              {(selectedClient.email ||
+                selectedClient.phone ||
+                selectedClient.address ||
+                selectedClient.website) && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">
+                    Contact Information
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {selectedClient.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Email
+                          </p>
+                          <p className="font-medium">
+                            {selectedClient.email}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedClient.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Phone
+                          </p>
+                          <p className="font-medium">
+                            {selectedClient.phone}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedClient.address && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Address
+                          </p>
+                          <p className="font-medium">
+                            {selectedClient.address}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedClient.website && (
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Website
+                          </p>
+                          <p className="font-medium">
+                            {selectedClient.website}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Account Details */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">
+                  Account Details
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">
+                      Account Manager
+                    </p>
+                    <p className="font-medium">
+                      {selectedClient.accountManager?.name ||
+                        'Unassigned'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Industry</p>
+                    <p className="font-medium">
+                      {selectedClient.industry}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Original Lead Conversion */}
+              {selectedClient.convertedFromLead && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-blue-500" />
+                    Converted From Lead
+                  </h4>
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-3">
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">
+                            {
+                              selectedClient.convertedFromLead
+                                .contactName
+                            }
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="text-xs">
+                            {selectedClient.convertedFromLead.stage}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground">
+                          {selectedClient.convertedFromLead.company}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Original Value: $
+                          {selectedClient.convertedFromLead.value.toLocaleString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Metrics Panel */}
+              {selectedClient.metrics && (
+                <ClientMetricsPanel
+                  metrics={selectedClient.metrics}
+                  healthFlags={selectedClient.healthFlags}
+                  suggestedActions={selectedClient.suggestedActions}
+                />
+              )}
+            </TabsContent>
+
+            {/* Activities Tab */}
+            <TabsContent value="activities" className="mt-4">
+              <ClientActivityTimeline
+                clientId={selectedClient.id}
+                activities={activities}
+                currentUserId={currentUserId}
+                onActivityAdded={handleDataRefresh}
               />
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          {/* Activities Tab */}
-          <TabsContent value="activities" className="mt-4">
-            <ClientActivityTimeline
-              clientId={selectedClient.id}
-              activities={activities}
-              currentUserId={currentUserId}
-              onActivityAdded={handleDataRefresh}
-            />
-          </TabsContent>
+            {/* Files Tab */}
+            <TabsContent value="files" className="mt-4">
+              <ClientFileUploadSection
+                clientId={selectedClient.id}
+                files={files}
+                currentUserId={currentUserId}
+                onFilesChanged={handleDataRefresh}
+              />
+            </TabsContent>
 
-          {/* Files Tab */}
-          <TabsContent value="files" className="mt-4">
-            <ClientFileUploadSection
-              clientId={selectedClient.id}
-              files={files}
-              currentUserId={currentUserId}
-              onFilesChanged={handleDataRefresh}
-            />
-          </TabsContent>
+            {/* Projects Tab */}
+            <TabsContent value="projects" className="mt-4">
+              <ClientProjectsList
+                clientId={selectedClient.id}
+                projects={projects}
+                accountManagers={accountManagers}
+                onProjectsChanged={handleDataRefresh}
+              />
+            </TabsContent>
 
-          {/* Projects Tab */}
-          <TabsContent value="projects" className="mt-4">
-            <ClientProjectsList
-              clientId={selectedClient.id}
-              projects={projects}
-              accountManagers={accountManagers}
-              onProjectsChanged={handleDataRefresh}
-            />
-          </TabsContent>
-
-          {/* Health Tab */}
-          <TabsContent value="health" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Heart className="h-4 w-4 text-red-500" />
-                Client Health Analysis
-              </h4>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAutoUpdateStatus}
-                  disabled={loadingAutoUpdate}>
-                  {loadingAutoUpdate ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    'Auto-Update Status'
-                  )}
-                </Button>
-                {(!selectedClient.aiHealthSummary || !selectedClient.healthScore) && (
+            {/* Health Tab */}
+            <TabsContent value="health" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-red-500" />
+                  Client Health Analysis
+                </h4>
+                <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={handleGenerateHealth}
-                    disabled={loadingHealth}>
-                    {loadingHealth ? (
+                    variant="outline"
+                    onClick={handleAutoUpdateStatus}
+                    disabled={loadingAutoUpdate}>
+                    {loadingAutoUpdate ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Auto-Update Status'
+                    )}
+                  </Button>
+                  {(!selectedClient.aiHealthSummary ||
+                    !selectedClient.healthScore) && (
+                    <Button
+                      size="sm"
+                      onClick={handleGenerateHealth}
+                      disabled={loadingHealth}>
+                      {loadingHealth ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        'Generate Report'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {selectedClient.healthScore !== null &&
+              selectedClient.healthScore !== undefined ? (
+                <Card
+                  className={getHealthBgColor(
+                    selectedClient.healthScore
+                  )}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium">
+                        Overall Health
+                      </span>
+                      <span
+                        className={`text-2xl font-bold ${getHealthColor(
+                          selectedClient.healthScore
+                        )}`}>
+                        {selectedClient.healthScore}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={selectedClient.healthScore}
+                      className="h-3"
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {selectedClient.aiHealthSummary ? (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm leading-relaxed text-gray-700">
+                    {selectedClient.aiHealthSummary}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Heart className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                  <p>No health analysis available yet</p>
+                  <p className="text-sm">
+                    Click &quot;Generate Report&quot; to analyze this
+                    client
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Growth Tab */}
+            <TabsContent value="growth" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                  Growth Opportunities
+                </h4>
+                {!upsellData && (
+                  <Button
+                    size="sm"
+                    onClick={handleGenerateUpsell}
+                    disabled={loadingUpsell}>
+                    {loadingUpsell ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Analyzing...
                       </>
                     ) : (
-                      'Generate Report'
+                      'Generate Strategy'
                     )}
                   </Button>
                 )}
               </div>
-            </div>
 
-            {selectedClient.healthScore !== null &&
-            selectedClient.healthScore !== undefined ? (
-              <Card className={getHealthBgColor(selectedClient.healthScore)}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium">Overall Health</span>
-                    <span
-                      className={`text-2xl font-bold ${getHealthColor(
-                        selectedClient.healthScore
-                      )}`}>
-                      {selectedClient.healthScore}%
-                    </span>
+              {upsellData ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h5 className="font-semibold text-sm mb-2">
+                      Strategy
+                    </h5>
+                    <p className="text-sm text-gray-700">
+                      {upsellData.strategy}
+                    </p>
                   </div>
-                  <Progress value={selectedClient.healthScore} className="h-3" />
-                </CardContent>
-              </Card>
-            ) : null}
 
-            {selectedClient.aiHealthSummary ? (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm leading-relaxed text-gray-700">
-                  {selectedClient.aiHealthSummary}
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Heart className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No health analysis available yet</p>
-                <p className="text-sm">Click "Generate Report" to analyze this client</p>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Growth Tab */}
-          <TabsContent value="growth" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-yellow-500" />
-                Growth Opportunities
-              </h4>
-              {!upsellData && (
-                <Button
-                  size="sm"
-                  onClick={handleGenerateUpsell}
-                  disabled={loadingUpsell}>
-                  {loadingUpsell ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    'Generate Strategy'
-                  )}
-                </Button>
-              )}
-            </div>
-
-            {upsellData ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h5 className="font-semibold text-sm mb-2">Strategy</h5>
-                  <p className="text-sm text-gray-700">{upsellData.approach}</p>
+                  {upsellData.opportunities &&
+                    upsellData.opportunities.length > 0 && (
+                      <div className="space-y-2">
+                        <h5 className="font-semibold text-sm">
+                          Opportunities
+                        </h5>
+                        {upsellData.opportunities.map(
+                          (opp, idx) => (
+                            <Card key={idx}>
+                              <CardContent className="p-4">
+                                <div>
+                                  <h6 className="font-semibold">
+                                    {opp.title}
+                                  </h6>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {opp.description}
+                                  </p>
+                                  <p className="text-sm font-medium mt-2">
+                                    Est. Value: {opp.potentialValue}
+                                  </p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Sparkles className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                  <p>No upsell strategy available yet</p>
+                  <p className="text-sm">
+                    Click &quot;Generate Strategy&quot; to discover
+                    opportunities
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
-                {upsellData.opportunities && upsellData.opportunities.length > 0 && (
-                  <div className="space-y-2">
-                    <h5 className="font-semibold text-sm">Opportunities</h5>
-                    {upsellData.opportunities.map((opp: any, idx: number) => (
-                      <Card key={idx}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h6 className="font-semibold">{opp.service}</h6>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {opp.rationale}
-                              </p>
-                              <p className="text-sm font-medium mt-2">
-                                Est. Value: {opp.estimatedValue}
-                              </p>
-                            </div>
-                            <Badge>{opp.priority}</Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Sparkles className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No upsell strategy available yet</p>
-                <p className="text-sm">
-                  Click "Generate Strategy" to discover opportunities
+          {/* Danger Zone */}
+          {hasPermission('clients:delete') && (
+            <>
+              <Separator className="my-4" />
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <h4 className="text-sm font-semibold text-red-900 mb-1">
+                  Danger Zone
+                </h4>
+                <p className="text-xs text-red-700 mb-3">
+                  Permanently remove this client and all associated
+                  projects, activities, and files. This cannot be
+                  undone.
                 </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Client
+                </Button>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Client Confirmation */}
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{' '}
+              <strong>{selectedClient?.name}</strong> and all
+              associated projects, activities, and files. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteClient}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700">
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
