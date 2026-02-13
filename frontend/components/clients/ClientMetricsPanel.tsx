@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -63,7 +63,9 @@ export function ClientMetricsPanel({
     return 'text-red-600';
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (
+    severity: string
+  ): BadgeProps['variant'] => {
     switch (severity) {
       case 'high':
         return 'destructive';
@@ -233,7 +235,7 @@ export function ClientMetricsPanel({
                     {flag.message}
                   </span>
                   <Badge
-                    variant={getSeverityColor(flag.severity) as any}
+                    variant={getSeverityColor(flag.severity)}
                     className={
                       flag.severity === 'positive'
                         ? 'bg-green-600 text-white hover:bg-green-700'
