@@ -317,3 +317,18 @@ model Team {
 
   @@map("teams")
 }
+
+model PipelineStage {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  color       String   @default("bg-gray-500")
+  lightColor  String   @default("bg-gray-50")
+  border      String   @default("border-gray-200")
+  probability Int      @default(0)
+  sortOrder   Int
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pipeline_stages")
+}

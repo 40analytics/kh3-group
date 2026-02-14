@@ -53,6 +53,9 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   // Permissions
   { key: 'permissions:view', label: 'View Permissions', module: 'Permissions' },
   { key: 'permissions:edit', label: 'Edit Permissions', module: 'Permissions' },
+
+  // Pipeline
+  { key: 'pipeline:manage', label: 'Manage Pipeline Stages', module: 'Pipeline' },
 ];
 
 // Default permissions matching current hardcoded behavior
@@ -68,6 +71,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
     'ai_settings:view', 'ai_settings:edit',
     'audit_logs:view',
     'permissions:view',
+    'pipeline:manage',
   ],
   MANAGER: [
     'leads:view', 'leads:create', 'leads:edit', 'leads:analyze',

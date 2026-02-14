@@ -1,12 +1,4 @@
-import { useState, useEffect } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -15,8 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Plus, Trash2, Edit } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Team } from '@/lib/types';
 import { getTeams, deleteTeam } from '@/lib/api/teams-client';
@@ -34,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataTable } from '@/components/ui/data-table';
+import { createTeamColumns } from './columns-teams';
 
 interface TeamListProps {
   managers: UserResponse[];
@@ -84,7 +77,6 @@ export function TeamList({
       setTeamToDelete(null);
       loadTeams();
     } catch (error) {
-      // Error is already toasted in deleteTeam if needed, but here we can handle specific messages
       const err = error as Error;
       if (err.message && err.message.includes('existing members')) {
         toast.error('Cannot delete team with members', {
@@ -102,6 +94,22 @@ export function TeamList({
   };
 
   const canManageTeams = ['CEO', 'ADMIN'].includes(currentUserRole);
+
+  const columns = useMemo(
+    () =>
+      createTeamColumns({
+        canManageTeams,
+        onEdit: (team) => {
+          setTeamToEdit(team);
+          setEditDialogOpen(true);
+        },
+        onDelete: (team) => {
+          setTeamToDelete(team);
+          setDeleteDialogOpen(true);
+        },
+      }),
+    [canManageTeams]
+  );
 
   return (
     <div className="space-y-4">
@@ -132,89 +140,13 @@ export function TeamList({
               No teams found. Create one to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Manager</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead className="text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teams.map((team) => (
-                  <TableRow
-                    key={team.id}
-                    className="cursor-pointer"
-                    onClick={() => setDetailTeamId(team.id)}
-                  >
-                    <TableCell className="font-medium">
-                      {team.name}
-                      {team.description && (
-                        <p className="text-xs text-muted-foreground">
-                          {team.description}
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{team.type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {team.manager ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-medium">
-                            {team.manager.name.charAt(0)}
-                          </div>
-                          <span className="text-sm">
-                            {team.manager.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{team._count?.members || 0}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        {canManageTeams && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setTeamToEdit(team);
-                                setEditDialogOpen(true);
-                              }}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setTeamToDelete(team);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={columns}
+              data={teams}
+              globalFilter
+              onRowClick={(team) => setDetailTeamId(team.id)}
+              exportFilename="teams"
+            />
           )}
         </CardContent>
       </Card>

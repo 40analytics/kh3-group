@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { leadsApi } from '@/lib/api/client';
+import { pipelineApi, type PipelineStage } from '@/lib/api/pipeline-client';
 import {
   Dialog,
   DialogContent,
@@ -64,7 +65,7 @@ const createLeadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   value: z.number().min(0, 'Value must be positive'),
-  stage: z.enum(['New', 'Contacted', 'Quoted', 'Negotiation', 'Won', 'Lost']),
+  stage: z.string().min(1, 'Stage is required'),
   serviceType: z.string().min(1, 'Service type is required'),
   urgency: z.enum(['Low', 'Medium', 'High']),
   source: z.string().min(1, 'Source is required'),
@@ -86,6 +87,11 @@ export function CreateLeadDialog({
 }: CreateLeadDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
+
+  useEffect(() => {
+    pipelineApi.getStages().then(setPipelineStages).catch(console.error);
+  }, []);
 
   const form = useForm<CreateLeadFormData>({
     resolver: zodResolver(createLeadSchema),
@@ -269,12 +275,19 @@ export function CreateLeadDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Contacted">Contacted</SelectItem>
-                        <SelectItem value="Quoted">Quoted</SelectItem>
-                        <SelectItem value="Negotiation">Negotiation</SelectItem>
-                        <SelectItem value="Won">Won</SelectItem>
-                        <SelectItem value="Lost">Lost</SelectItem>
+                        {pipelineStages.length > 0
+                          ? pipelineStages.map((s) => (
+                              <SelectItem key={s.name} value={s.name}>
+                                {s.name}
+                              </SelectItem>
+                            ))
+                          : ['New', 'Contacted', 'Quoted', 'Negotiation', 'Won', 'Lost'].map(
+                              (name) => (
+                                <SelectItem key={name} value={name}>
+                                  {name}
+                                </SelectItem>
+                              )
+                            )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

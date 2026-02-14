@@ -45,7 +45,8 @@
       "mcp__shadcn__get_item_examples_from_registries",
       "mcp__shadcn__search_items_in_registries",
       "Bash(npx next build)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(cd:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -266,44 +266,46 @@ export class ClientsService {
 
     let client;
     let isNewClient = false;
+    let existingClientDetected = false;
+
+    const clientInclude = {
+      accountManager: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+    };
 
     // Check if lead is already linked to an existing client (repeat business)
     if (lead.clientId && lead.client) {
       // Use existing client
       client = await this.prisma.client.findUnique({
         where: { id: lead.clientId },
-        include: {
-          accountManager: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-            },
-          },
-        },
+        include: clientInclude,
       });
-    } else {
+    } else if (lead.email) {
+      // Check if a client with the same email already exists
+      const existingClient = await this.prisma.client.findFirst({
+        where: { email: lead.email },
+        include: clientInclude,
+      });
+
+      if (existingClient) {
+        client = existingClient;
+        existingClientDetected = true;
+      }
+    }
+
+    if (!client) {
       // Create new client from lead data
       client = await this.prisma.client.create({
         data: {
           name: lead.company,
           email: lead.email,
           phone: lead.phone,
-          segment: 'SME', // Default, can be updated later
+          segment: 'SME',
           industry: lead.serviceType || 'General',
           accountManagerId: accountManagerId || lead.assignedToId,
         },
-        include: {
-          accountManager: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-            },
-          },
-        },
+        include: clientInclude,
       });
       isNewClient = true;
     }
@@ -349,7 +351,9 @@ export class ClientsService {
 
     const message = isNewClient
       ? `Successfully converted lead "${lead.contactName}" to new client "${client.name}" with first project`
-      : `Successfully converted lead "${lead.contactName}" to project for existing client "${client.name}"`;
+      : existingClientDetected
+        ? `Lead "${lead.contactName}" auto-linked to existing client "${client.name}" (matching email) with new project`
+        : `Successfully converted lead "${lead.contactName}" to project for existing client "${client.name}"`;
 
     // Audit log
     await this.auditService.log({
@@ -370,6 +374,7 @@ export class ClientsService {
       project,
       message,
       isNewClient,
+      existingClientDetected,
     };
   }
 

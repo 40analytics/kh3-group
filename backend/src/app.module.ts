@@ -19,6 +19,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
 import { PermissionsModule } from './permissions/permissions.module';
 import { TeamsModule } from './teams/teams.module';
+import { PipelineModule } from './pipeline/pipeline.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { TeamsModule } from './teams/teams.module';
     AdminModule,
     TeamsModule,
     PermissionsModule,
+    PipelineModule,
   ],
   providers: [
     {

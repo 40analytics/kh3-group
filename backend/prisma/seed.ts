@@ -161,6 +161,25 @@ async function main() {
   });
   console.log('✅ Created Sales 3 (Team B):', sales3.email);
 
+  // Seed default pipeline stages
+  const defaultStages = [
+    { name: 'New', color: 'bg-gray-500', lightColor: 'bg-gray-50', border: 'border-gray-200', probability: 10, sortOrder: 0, isSystem: false },
+    { name: 'Contacted', color: 'bg-blue-500', lightColor: 'bg-blue-50', border: 'border-blue-200', probability: 30, sortOrder: 1, isSystem: false },
+    { name: 'Quoted', color: 'bg-purple-500', lightColor: 'bg-purple-50', border: 'border-purple-200', probability: 50, sortOrder: 2, isSystem: false },
+    { name: 'Negotiation', color: 'bg-orange-500', lightColor: 'bg-orange-50', border: 'border-orange-200', probability: 80, sortOrder: 3, isSystem: false },
+    { name: 'Won', color: 'bg-green-500', lightColor: 'bg-green-50', border: 'border-green-200', probability: 100, sortOrder: 4, isSystem: true },
+    { name: 'Lost', color: 'bg-red-500', lightColor: 'bg-red-50', border: 'border-red-200', probability: 0, sortOrder: 5, isSystem: true },
+  ];
+
+  for (const stage of defaultStages) {
+    await prisma.pipelineStage.upsert({
+      where: { name: stage.name },
+      update: {},
+      create: stage,
+    });
+  }
+  console.log('✅ Seeded 6 default pipeline stages');
+
   console.log('\n📊 Seed Summary:');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('✅ 7 test users created with the following credentials:');

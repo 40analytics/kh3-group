@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -9,16 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { UserPlus, Loader2, Trash2, Edit } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { CreateUserDialog } from './CreateUserDialog';
 import { UpdateUserDialog } from './UpdateUserDialog';
 import { usersApi, type UserResponse } from '@/lib/api/users-client';
@@ -34,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataTable } from '@/components/ui/data-table';
+import { createUserColumns } from './columns-users';
 
 interface AdminUsersViewProps {
   currentUser: {
@@ -126,20 +119,23 @@ export default function AdminUsersView({
 
   const managers = users.filter((u) => u.role === 'MANAGER');
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'CEO':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'ADMIN':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'SALES':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'MANAGER':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
-  };
+  const columns = useMemo(
+    () =>
+      createUserColumns({
+        currentUserId: currentUser.id,
+        canEditUser,
+        canDeleteUser,
+        onEdit: (user) => {
+          setUserToUpdate(user);
+          setUpdateDialogOpen(true);
+        },
+        onDelete: (user) => {
+          setUserToDelete(user);
+          setDeleteDialogOpen(true);
+        },
+      }),
+    [currentUser.id, currentUser.role]
+  );
 
   return (
     <div className="space-y-6">
@@ -206,98 +202,12 @@ export default function AdminUsersView({
               No users found.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.name}
-                      {user.id === currentUser.id && (
-                        <Badge
-                          variant="outline"
-                          className="ml-2 text-xs">
-                          You
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.email}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getRoleBadge(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {user.teamName || '-'}
-                      {user.manager && (
-                        <div className="text-xs">
-                          Reports to: {user.manager.name}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          user.status === 'Active'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-muted text-muted-foreground border-border'
-                        }>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {canEditUser(user) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setUserToUpdate(user);
-                              setUpdateDialogOpen(true);
-                            }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canDeleteUser(user) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setUserToDelete(user);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!canEditUser(user) &&
-                          !canDeleteUser(user) && (
-                            <span className="text-xs text-muted-foreground px-2">
-                              -
-                            </span>
-                          )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={columns}
+              data={users}
+              globalFilter
+              exportFilename="users"
+            />
           )}
         </CardContent>
       </Card>

@@ -68,6 +68,12 @@ export class LeadsService {
             role: true,
           },
         },
+        stageHistory: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            user: { select: { name: true } },
+          },
+        },
       },
     });
 
@@ -150,6 +156,14 @@ export class LeadsService {
             changedBy: userId,
           },
         });
+
+        // Auto-set dates based on stage transitions
+        if (data.stage === 'Won' || data.stage === 'Lost') {
+          data.dealClosedAt = new Date();
+        }
+        if (data.stage === 'Quoted') {
+          data.quoteSentAt = new Date();
+        }
       }
     }
 

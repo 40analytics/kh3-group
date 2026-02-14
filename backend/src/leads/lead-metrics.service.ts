@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
+export interface StageTimelineEntry {
+  stage: string;
+  enteredAt: Date;
+  daysSpent: number;
+  changedBy?: string;
+}
+
 export interface LeadMetrics {
   daysInPipeline: number;
   daysSinceLastContact: number;
   activityCount: number;
   fileCount: number;
-  daysToQuotation?: number; // Time from creation to "Quoted" stage
-  daysFromQuotationToClose?: number; // Time from "Quoted" to "Won"
+  daysToQuotation?: number;
+  daysFromQuotationToClose?: number;
+  stageTimeline?: StageTimelineEntry[];
 }
 
 export interface RiskFlag {
@@ -73,6 +81,22 @@ export class LeadMetricsService {
       );
     }
 
+    // Build stage timeline from history
+    const stageTimeline: StageTimelineEntry[] = stageHistory.map((entry, index) => {
+      const nextEntry = stageHistory[index + 1];
+      const exitTime = nextEntry ? nextEntry.createdAt.getTime() : now.getTime();
+      const daysSpent = Math.floor(
+        (exitTime - entry.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        stage: entry.toStage,
+        enteredAt: entry.createdAt,
+        daysSpent,
+        changedBy: undefined, // Will be populated if user is included
+      };
+    });
+
     return {
       daysInPipeline,
       daysSinceLastContact,
@@ -80,6 +104,7 @@ export class LeadMetricsService {
       fileCount,
       daysToQuotation,
       daysFromQuotationToClose,
+      stageTimeline,
     };
   }
 

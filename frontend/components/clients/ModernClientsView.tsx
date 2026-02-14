@@ -3,23 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Plus } from 'lucide-react';
 import type { Client } from '@/lib/types';
 import { CreateClientDialog } from './CreateClientDialog';
 import { useAuth } from '@/contexts/auth-context';
 import { ClientStatsCards } from './ClientStatsCards';
 import { ClientDetailDialog } from './ClientDetailDialog';
+import { DataTable } from '@/components/ui/data-table';
+import { clientColumns } from './columns';
 
 interface Manager {
   id: string;
@@ -37,24 +28,6 @@ interface ModernClientsViewProps {
   };
   managers: Manager[];
 }
-
-const getStatusBadge = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'active':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'at risk':
-    case 'dormant':
-      return 'bg-red-50 text-red-600 border-red-200';
-    default:
-      return 'bg-muted text-muted-foreground border-border';
-  }
-};
-
-const getHealthColor = (score: number) => {
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-yellow-600';
-  return 'text-red-600';
-};
 
 export default function ModernClientsView({
   clients: initialClients,
@@ -109,77 +82,13 @@ export default function ModernClientsView({
           No clients found.
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Industry</TableHead>
-                <TableHead>Segment</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Health</TableHead>
-                <TableHead className="text-right">Lifetime Revenue</TableHead>
-                <TableHead>Manager</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {initialClients.map((client) => (
-                <TableRow
-                  key={client.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedClient(client)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                          {client.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{client.name}</p>
-                        {client.email && (
-                          <p className="text-xs text-muted-foreground">{client.email}</p>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {client.industry}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="text-xs">
-                      {client.segment}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusBadge(client.status)}>
-                      {client.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {client.healthScore !== null && client.healthScore !== undefined ? (
-                      <div className="flex items-center gap-2 min-w-[80px]">
-                        <Progress value={client.healthScore} className="h-1.5 w-12" />
-                        <span className={`text-sm font-medium ${getHealthColor(client.healthScore)}`}>
-                          {client.healthScore}%
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">N/A</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    ${((client.lifetimeRevenue || 0) / 1000).toFixed(0)}k
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {client.accountManager?.name || 'Unassigned'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={clientColumns}
+          data={initialClients}
+          globalFilter
+          onRowClick={setSelectedClient}
+          exportFilename="clients"
+        />
       )}
 
       {/* Client Detail Dialog */}

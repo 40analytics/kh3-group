@@ -129,12 +129,34 @@ export interface Lead {
   createdAt?: string | Date;
   updatedAt?: string | Date;
 
+  // Conversion tracking
+  convertedToClientId?: string | null;
+
+  // Time tracking
+  quoteSentAt?: string | Date | null;
+  dealClosedAt?: string | Date | null;
+
+  // Stage history
+  stageHistory?: Array<{
+    id: string;
+    fromStage: string | null;
+    toStage: string;
+    createdAt: string;
+    user: { name: string };
+  }>;
+
   // Metrics and risk flags
   metrics?: {
     daysInPipeline: number;
     daysSinceLastContact: number;
     activityCount: number;
     fileCount: number;
+    stageTimeline?: Array<{
+      stage: string;
+      enteredAt: string;
+      daysSpent: number;
+      changedBy?: string;
+    }>;
   };
   riskFlags?: Array<{
     type:
