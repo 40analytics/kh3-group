@@ -5,17 +5,23 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   try {
     console.log('🔄 Starting KHY CRM Backend...');
-    console.log(`📦 Node environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔌 Database URL configured: ${process.env.DATABASE_URL ? 'Yes' : 'No'}`);
+    console.log(
+      `📦 Node environment: ${process.env.NODE_ENV || 'development'}`
+    );
+    console.log(
+      `🔌 Database URL configured: ${process.env.DATABASE_URL ? 'Yes' : 'No'}`
+    );
 
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug'],
     });
 
-    // Enable CORS for Next.js frontend
+    // Enable CORS for the Next.js frontend
     // CORS_ORIGIN supports comma-separated values, e.g. "https://app.example.com,https://staging.example.com"
     const envOrigins = process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim().replace(/\/$/, ''))
+      ? process.env.CORS_ORIGIN.split(',').map((o) =>
+          o.trim().replace(/\/$/, '')
+        )
       : [];
 
     const allowedOrigins = [
@@ -24,7 +30,9 @@ async function bootstrap() {
       ...envOrigins,
     ];
 
-    console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    console.log(
+      `🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`
+    );
 
     app.enableCors({
       origin: (origin, callback) => {
@@ -34,7 +42,11 @@ async function bootstrap() {
         // Remove trailing slash from origin for comparison
         const normalizedOrigin = origin.replace(/\/$/, '');
 
-        if (allowedOrigins.some(allowed => allowed === normalizedOrigin)) {
+        if (
+          allowedOrigins.some(
+            (allowed) => allowed === normalizedOrigin
+          )
+        ) {
           callback(null, true);
         } else {
           console.warn(`⚠️  CORS blocked origin: ${origin}`);
@@ -52,7 +64,7 @@ async function bootstrap() {
         whitelist: true,
         transform: true,
         forbidNonWhitelisted: true,
-      }),
+      })
     );
 
     // API prefix
@@ -70,7 +82,9 @@ async function bootstrap() {
     console.log(`✅ KHY CRM Backend successfully started!`);
     console.log(`🚀 Server running on http://${host}:${port}`);
     console.log(`📚 API available at http://${host}:${port}/api`);
-    console.log(`❤️  Health check available at http://${host}:${port}/api/health`);
+    console.log(
+      `❤️  Health check available at http://${host}:${port}/api/health`
+    );
   } catch (error) {
     console.error('❌ Failed to start application:');
     console.error(error);
