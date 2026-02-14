@@ -363,7 +363,7 @@ export default function ModernLeadsView({
     setSummaryLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:4000/api/leads/${selectedLead.id}/summary`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/leads/${selectedLead.id}/summary`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

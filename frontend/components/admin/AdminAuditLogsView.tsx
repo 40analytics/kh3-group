@@ -21,7 +21,7 @@ export default function AdminAuditLogsView() {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://localhost:4000/api/admin/audit-logs?limit=50',
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/admin/audit-logs?limit=50`,
         {
           headers: {
             Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}`,

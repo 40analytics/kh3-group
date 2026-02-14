@@ -16,20 +16,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const [apiError, setApiError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -41,76 +33,107 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       setIsLoading(true);
-      setApiError('');
-      setSuccessMessage('');
 
       const response = await authApi.forgotPassword(data.email);
-      setSuccessMessage(response.message || 'Password reset link sent to your email');
-
-      form.reset();
+      setSent(true);
+      toast.success('Reset link sent', {
+        description: response.message || 'Check your email for a password reset link.',
+      });
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Failed to send reset link. Please try again.');
+      toast.error('Failed to send reset link', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
-        <CardDescription>
-          Enter your email address and we&apos;ll send you a link to reset your password
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {apiError && (
-              <Alert variant="destructive">
-                <AlertDescription>{apiError}</AlertDescription>
-              </Alert>
-            )}
-
-            {successMessage && (
-              <Alert className="bg-green-50 text-green-900 border-green-200">
-                <AlertDescription>{successMessage}</AlertDescription>
-              </Alert>
-            )}
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send reset link'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
-        <div className="text-sm text-muted-foreground text-center">
-          Remember your password?{' '}
-          <Link href="/login" className="text-primary hover:text-primary/80 font-medium">
-            Sign in
+  if (sent) {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-display font-semibold tracking-tight">
+            Check your email
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            We&apos;ve sent a password reset link to{' '}
+            <span className="font-medium text-foreground">{form.getValues('email')}</span>
+          </p>
+        </div>
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setSent(false)}
+          >
+            Try a different email
+          </Button>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to sign in
           </Link>
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-display font-semibold tracking-tight">
+          Forgot password?
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your email and we&apos;ll send you a reset link
+        </p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    {...field}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              'Send reset link'
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      <p className="text-center">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to sign in
+        </Link>
+      </p>
+    </div>
   );
 }

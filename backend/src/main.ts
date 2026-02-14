@@ -13,10 +13,15 @@ async function bootstrap() {
     });
 
     // Enable CORS for Next.js frontend
+    // CORS_ORIGIN supports comma-separated values, e.g. "https://app.example.com,https://staging.example.com"
+    const envOrigins = process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim().replace(/\/$/, ''))
+      : [];
+
     const allowedOrigins = [
       'http://localhost:3000',
       'https://kh3-group.vercel.app',
-      ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.replace(/\/$/, '')] : []),
+      ...envOrigins,
     ];
 
     console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`);

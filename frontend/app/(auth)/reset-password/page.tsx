@@ -17,27 +17,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [apiError, setApiError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string>('');
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
     if (!tokenParam) {
-      setApiError('Invalid or missing reset token');
+      toast.error('Invalid reset link', {
+        description: 'The reset token is missing or invalid.',
+      });
     } else {
       setToken(tokenParam);
     }
@@ -53,107 +47,114 @@ function ResetPasswordForm() {
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) {
-      setApiError('Invalid or missing reset token');
+      toast.error('Invalid reset link');
       return;
     }
 
     try {
       setIsLoading(true);
-      setApiError('');
-
       await authApi.resetPassword(token, data.password);
 
-      // Redirect to login page with success message
+      toast.success('Password reset!', {
+        description: 'You can now sign in with your new password.',
+      });
+
       router.push('/login?reset=success');
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Failed to reset password. Please try again.');
+      toast.error('Failed to reset password', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
-        <CardDescription>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-display font-semibold tracking-tight">
+          Reset password
+        </h1>
+        <p className="text-sm text-muted-foreground">
           Enter your new password below
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {apiError && (
-              <Alert variant="destructive">
-                <AlertDescription>{apiError}</AlertDescription>
-              </Alert>
+        </p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Min. 8 characters"
+                    {...field}
+                    disabled={isLoading || !token}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter new password (min. 8 characters)"
-                      {...field}
-                      disabled={isLoading || !token}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Confirm your new password"
+                    {...field}
+                    disabled={isLoading || !token}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Confirm your new password"
-                      {...field}
-                      disabled={isLoading || !token}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <Button type="submit" className="w-full" disabled={isLoading || !token}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Resetting...
+              </>
+            ) : (
+              'Reset password'
+            )}
+          </Button>
+        </form>
+      </Form>
 
-            <Button type="submit" className="w-full" disabled={isLoading || !token}>
-              {isLoading ? 'Resetting password...' : 'Reset password'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
-        <div className="text-sm text-muted-foreground text-center">
-          Remember your password?{' '}
-          <Link href="/login" className="text-primary hover:text-primary/80 font-medium">
-            Sign in
-          </Link>
-        </div>
-      </CardFooter>
-    </Card>
+      <p className="text-center">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to sign in
+        </Link>
+      </p>
+    </div>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
-        </CardContent>
-      </Card>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   );

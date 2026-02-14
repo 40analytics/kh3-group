@@ -18,13 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Users,
-  UserPlus,
-  Loader2,
-  Trash2,
-  Edit,
-} from 'lucide-react';
+import { UserPlus, Loader2, Trash2, Edit } from 'lucide-react';
 import { CreateUserDialog } from './CreateUserDialog';
 import { UpdateUserDialog } from './UpdateUserDialog';
 import { usersApi, type UserResponse } from '@/lib/api/users-client';
@@ -49,15 +43,19 @@ interface AdminUsersViewProps {
   };
 }
 
-export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
+export default function AdminUsersView({
+  currentUser,
+}: AdminUsersViewProps) {
   const { hasPermission } = useAuth();
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const [userToUpdate, setUserToUpdate] = useState<UserResponse | null>(null);
+  const [userToUpdate, setUserToUpdate] =
+    useState<UserResponse | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
+  const [userToDelete, setUserToDelete] =
+    useState<UserResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const loadUsers = async () => {
@@ -107,7 +105,8 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
     if (!['CEO', 'ADMIN'].includes(currentUser.role)) return false;
     if (user.id === currentUser.id) return false;
     if (user.role === 'CEO') return false;
-    if (user.role === 'ADMIN' && currentUser.role !== 'CEO') return false;
+    if (user.role === 'ADMIN' && currentUser.role !== 'CEO')
+      return false;
     return true;
   };
 
@@ -118,7 +117,9 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
       return ['MANAGER', 'SALES'].includes(user.role);
     }
     if (currentUser.role === 'MANAGER') {
-      return user.role === 'SALES' && user.managerId === currentUser.id;
+      return (
+        user.role === 'SALES' && user.managerId === currentUser.id
+      );
     }
     return false;
   };
@@ -143,20 +144,28 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-display tracking-tight">User Management</h2>
-        <p className="text-muted-foreground mt-1">Manage system users and their roles</p>
+        <h2 className="text-3xl font-display tracking-tight">
+          User Management
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Manage system users and their roles
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total Users</p>
+            <p className="text-xs text-muted-foreground">
+              Total Users
+            </p>
             <p className="text-2xl font-display">{users.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Active Users</p>
+            <p className="text-xs text-muted-foreground">
+              Active Users
+            </p>
             <p className="text-2xl font-display">
               {users.filter((u) => u.status === 'Active').length}
             </p>
@@ -174,10 +183,14 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Users</CardTitle>
-            <CardDescription>Manage system users and their permissions</CardDescription>
+            <CardDescription>
+              Manage system users and their permissions
+            </CardDescription>
           </div>
           {hasPermission('users:create') && (
-            <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+            <Button
+              className="gap-2"
+              onClick={() => setCreateDialogOpen(true)}>
               <UserPlus className="h-4 w-4" />
               Add User
             </Button>
@@ -189,7 +202,9 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No users found.</div>
+            <div className="text-center py-8 text-muted-foreground">
+              No users found.
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -199,7 +214,9 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
                   <TableHead>Role</TableHead>
                   <TableHead>Team</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -208,19 +225,29 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
                     <TableCell className="font-medium">
                       {user.name}
                       {user.id === currentUser.id && (
-                        <Badge variant="outline" className="ml-2 text-xs">You</Badge>
+                        <Badge
+                          variant="outline"
+                          className="ml-2 text-xs">
+                          You
+                        </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {user.email}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getRoleBadge(user.role)}>
+                      <Badge
+                        variant="outline"
+                        className={getRoleBadge(user.role)}>
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.teamName || '-'}
                       {user.manager && (
-                        <div className="text-xs">Reports to: {user.manager.name}</div>
+                        <div className="text-xs">
+                          Reports to: {user.manager.name}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -230,8 +257,7 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
                           user.status === 'Active'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-muted text-muted-foreground border-border'
-                        }
-                      >
+                        }>
                         {user.status}
                       </Badge>
                     </TableCell>
@@ -244,8 +270,7 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
                             onClick={() => {
                               setUserToUpdate(user);
                               setUpdateDialogOpen(true);
-                            }}
-                          >
+                            }}>
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
@@ -257,14 +282,16 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
                               setUserToDelete(user);
                               setDeleteDialogOpen(true);
                             }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
-                        {!canEditUser(user) && !canDeleteUser(user) && (
-                          <span className="text-xs text-muted-foreground px-2">-</span>
-                        )}
+                        {!canEditUser(user) &&
+                          !canDeleteUser(user) && (
+                            <span className="text-xs text-muted-foreground px-2">
+                              -
+                            </span>
+                          )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -292,12 +319,15 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
         managers={managers}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <strong>{userToDelete?.name}</strong> (
+              This will permanently delete{' '}
+              <strong>{userToDelete?.name}</strong> (
               {userToDelete?.email}). This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -306,8 +336,7 @@ export default function AdminUsersView({ currentUser }: AdminUsersViewProps) {
             <AlertDialogAction
               onClick={handleDeleteUser}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
+              className="bg-red-600 hover:bg-red-700">
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
