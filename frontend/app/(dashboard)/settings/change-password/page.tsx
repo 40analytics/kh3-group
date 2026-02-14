@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/validations/auth';
@@ -25,6 +26,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
   const [apiError, setApiError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +142,7 @@ export default function ChangePasswordPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => form.reset()}
+                  onClick={() => router.back()}
                   disabled={isLoading}
                 >
                   Cancel
